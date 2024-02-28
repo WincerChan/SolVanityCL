@@ -1,0 +1,3 @@
+pyopencl
+base58
+PyNaCl

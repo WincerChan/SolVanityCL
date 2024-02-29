@@ -1,6 +1,6 @@
 ## Installation
 
-python3 install -r requirements.txt (require python3.6+)
+python3 -m pip install -r requirements.txt (require python3.6+)
 
 ## Run
 

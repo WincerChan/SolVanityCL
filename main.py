@@ -12,7 +12,7 @@ from nacl.signing import SigningKey
 
 logging.basicConfig(format="%(asctime)s %(message)s")
 
-ITERATION_OCCUPIED_BITS = 26
+ITERATION_OCCUPIED_BITS = 24
 
 
 ITERATION_OCCUPIED_BYTES = np.ubyte(ceil(ITERATION_OCCUPIED_BITS / 8))

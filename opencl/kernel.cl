@@ -5,8 +5,8 @@ typedef long int64_t;
 
 typedef int32_t fe[10];
 
-constant uchar PREFIX[] = {};
-constant uchar SUFFIX[] = {87, 105, 110, 99, 101, 114};
+constant uchar PREFIX[] = {83, 111, 76};
+constant uchar SUFFIX[] = {};
 
 static uint64_t load_3(const unsigned char *in) {
   uint64_t result;
@@ -5036,7 +5036,8 @@ static uchar *base58_encode(uchar *in, uint *out_len) {
   return out;
 }
 
-__kernel void generate_pubkey(constant uchar *seed, global uchar *out) {
+__kernel void generate_pubkey(constant uchar *seed, global uchar *out,
+                              global uchar *occupied_bytes) {
   uchar public_key[32], private_key[64];
   uchar key_base[32];
   for (size_t i = 0; i < 32; i++) {
@@ -5044,10 +5045,12 @@ __kernel void generate_pubkey(constant uchar *seed, global uchar *out) {
   }
 
   const uint thread_id = get_global_id(0);
-  key_base[31] = (thread_id >> 24) & 0xFF;
-  key_base[30] = (thread_id >> 16) & 0xFF;
-  key_base[29] = (thread_id >> 8) & 0xFF;
-  key_base[28] = thread_id & 0xFF;
+
+  // reset last occupied bytes
+  for (size_t i = 0; i < *occupied_bytes; i++) {
+    uchar key_base_x = key_base[31 - i];
+    key_base[31 - i] += ((thread_id >> (i * 8)) & 0xFF);
+  }
 
   ed25519_create_keypair(public_key, private_key, key_base);
   uint length;
@@ -5060,7 +5063,7 @@ __kernel void generate_pubkey(constant uchar *seed, global uchar *out) {
       return;
   }
 
-  for (size_t i=0; i< prefix_len; i++) {
+  for (size_t i = 0; i < prefix_len; i++) {
     if (addr[i] != PREFIX[i])
       return;
   }
@@ -5069,14 +5072,13 @@ __kernel void generate_pubkey(constant uchar *seed, global uchar *out) {
   if (out[0] == 0) {
     out[0] = length;
     for (size_t j = 0; j < 32; j++) {
-      out[j+1] = key_base[j];
+      out[j + 1] = key_base[j];
     }
   }
   if (length < out[0]) {
     out[0] = length;
     for (size_t j = 0; j < 32; j++) {
-      out[j+1] = key_base[j];
+      out[j + 1] = key_base[j];
     }
   }
-
 }

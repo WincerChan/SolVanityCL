@@ -1,7 +1,7 @@
 from base58 import b58decode
 
-PREFIX = ""
-SUFFIX = "Wincer"
+PREFIX = "SoL"
+SUFFIX = ""
 
 b58decode(PREFIX)
 b58decode(SUFFIX)
@@ -23,6 +23,7 @@ for i, s in enumerate(source_lines):
             f"constant uchar SUFFIX[] = {{{', '.join(map(str, SUFFIX_BYTES))}}};\n"
         )
         print("Succeed update suffix in kernel file.")
+
 
 with open("opencl/kernel.cl", "w") as f:
     f.writelines(source_lines)

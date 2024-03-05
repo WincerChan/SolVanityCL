@@ -2,6 +2,7 @@ import json
 import logging
 import secrets
 import time
+from math import ceil
 from pathlib import Path
 
 import numpy as np
@@ -11,7 +12,12 @@ from nacl.signing import SigningKey
 
 logging.basicConfig(format="%(asctime)s %(message)s")
 
-global_work_size = (1 << 24,)
+ITERATION_OCCUPIED_BITS = 24
+
+
+ITERATION_OCCUPIED_BYTES = np.ubyte(ceil(ITERATION_OCCUPIED_BITS / 8))
+
+global_work_size = (1 << ITERATION_OCCUPIED_BITS,)
 local_work_size = (32,)
 
 # load kernel source code
@@ -25,20 +31,24 @@ def generate_randomkey():
     if gnumber_p.exists():
         token_bytes = gnumber_p.read_bytes()
     else:
-        token_bytes = secrets.token_bytes(32)
+        token_bytes = (
+            secrets.token_bytes(32 - ITERATION_OCCUPIED_BYTES)
+            + b"\x00" * ITERATION_OCCUPIED_BYTES
+        )
     # no existed, generate new one
     key32 = np.array([x for x in token_bytes], dtype=np.ubyte)
     return key32
 
 
 def increament(key32: np.ndarray):
-    # 从 28 位开始，到27 位，26 位
-    for x in range(27, -1, -1):
-        if key32[x] < 255:
-            key32[x] += 1
-            break
-        else:
-            key32[x] = 0
+    current_number = int(bytes(key32).hex(), base=16)
+    next_number = current_number + (1 << ITERATION_OCCUPIED_BITS)
+    _number_bytes = next_number.to_bytes(32, "big")
+    new_key32 = np.array([x for x in _number_bytes], dtype=np.ubyte)
+    carry_index = 0 - ITERATION_OCCUPIED_BYTES
+    if (new_key32[carry_index] < key32[carry_index]) and new_key32[carry_index] != 0:
+        new_key32[carry_index] = 0
+    key32[:] = new_key32
     Path(".global_number.dat").write_bytes(bytes(key32))
 
 
@@ -66,10 +76,16 @@ def loop_find(key32):
     memobj_output = cl.Buffer(
         context, cl.mem_flags.READ_WRITE, 33 * np.ubyte().itemsize
     )
+    memobj_occupied_bytes = cl.Buffer(
+        context,
+        cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR,
+        hostbuf=np.array([ITERATION_OCCUPIED_BYTES]),
+    )
 
     output = np.zeros(33, dtype=np.ubyte)
     kernel.set_arg(0, memobj_key32)
     kernel.set_arg(1, memobj_output)
+    kernel.set_arg(2, memobj_occupied_bytes)
 
     st = time.time()
     cl.enqueue_nd_range_kernel(command_queue, kernel, global_work_size, local_work_size)

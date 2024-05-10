@@ -1,12 +1,65 @@
 ## Installation
 
+```bash
 python3 -m pip install -r requirements.txt
 
-Requires Python 3.6 or higher
+# or
 
-## Run
+pip3 install -r requirements.txt
+```
 
-1. **Edit** `gen_pattern.py`: Change the prefix and suffix to the Solana address you want. This step involves modifying the Python script to specify the desired Solana address pattern.
-2. **Generate pattern** `python3 gen_pattern.py`: Update the kernel file.
-3. **Edit** `main.py`: Locate line 15 and adjust the ITERATION_OCCUPIED_BITS variable. Recommended starting points are 24, 26, 28, 30, 32. Keep in mind, the larger the ITERATION_OCCUPIED_BITS, the longer it will take to complete one iteration.
-4. **Execute main script** `python3 main.py`: This command presumably searches for Solana keys matching the pattern specified in gen_pattern.py and then writes them to a file in the current directory.
+Requires Python 3.6 or higher.
+
+## Usage
+
+```bash
+$ python main.py
+
+Usage: main.py [OPTIONS] COMMAND [ARGS]...
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  search-pubkey  Search Solana vanity pubkey
+  show-device    Show OpenCL devices
+```
+
+### Search Pubkey
+
+```bash
+$ python main.py search-pubkey --help
+
+Usage: main.py search-pubkey [OPTIONS]
+
+  Search Solana vanity pubkey
+
+Options:
+  --starts-with TEXT        Public key starts with the indicated prefix.
+  --ends-with TEXT          Public key ends with the indicated suffix.
+  --iteration-bits INTEGER  Number of the iteration occupied bits. Recommended
+                            24, 26, 28, 30, 32. The larger the bits, the
+                            longer it takes to complete an iteration.
+                            [default: 24]
+  --count INTEGER           Count of pubkeys to generate.  [default: 1]
+  --help                    Show this message and exit.
+```
+
+Example:
+
+```bash
+$ python main.py search-pubkey --starts-with SoL
+
+[INFO 2024-05-11 03:17:57,110] Searching Solana pubkey that starts with 'SoL' and ends with ''
+[INFO 2024-05-11 03:17:57,161] Searching with 1 OpenCL devices
+[INFO 2024-05-11 03:18:06,034] Speed: 1.89 MH/s
+[INFO 2024-05-11 03:18:06,036] Found: SoLJqsivM2R8Y2GXhfvKJoFM1aDAsmwMBLbbFwAZWR1
+```
+
+Verify Keypairs file:
+
+```bash
+$ solana-keygen pubkey SoLJqsivM2R8Y2GXhfvKJoFM1aDAsmwMBLbbFwAZWR1.json
+
+SoLJqsivM2R8Y2GXhfvKJoFM1aDAsmwMBLbbFwAZWR1
+```

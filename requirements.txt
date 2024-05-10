@@ -1,3 +1,4 @@
+click
 pyopencl
 base58
 PyNaCl

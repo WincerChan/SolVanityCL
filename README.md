@@ -35,14 +35,18 @@ Usage: main.py search-pubkey [OPTIONS]
   Search Solana vanity pubkey
 
 Options:
-  --starts-with TEXT        Public key starts with the indicated prefix.
-  --ends-with TEXT          Public key ends with the indicated suffix.
-  --iteration-bits INTEGER  Number of the iteration occupied bits. Recommended
-                            24, 26, 28, 30, 32. The larger the bits, the
-                            longer it takes to complete an iteration.
-                            [default: 24]
-  --count INTEGER           Count of pubkeys to generate.  [default: 1]
-  --help                    Show this message and exit.
+  --starts-with TEXT              Public key starts with the indicated prefix.
+  --ends-with TEXT                Public key ends with the indicated suffix.
+  --count INTEGER                 Count of pubkeys to generate.  [default: 1]
+  --output-dir DIRECTORY          Output directory.  [default: ./]
+  --select-device / --no-select-device
+                                  Select OpenCL device manually  [default: no-
+                                  select-device]
+  --iteration-bits INTEGER        Number of the iteration occupied bits.
+                                  Recommended 24, 26, 28, 30, 32. The larger
+                                  the bits, the longer it takes to complete an
+                                  iteration.  [default: 24]
+  --help                          Show this message and exit.
 ```
 
 Example:
@@ -56,7 +60,7 @@ $ python main.py search-pubkey --starts-with SoL
 [INFO 2024-05-11 03:18:06,036] Found: SoLJqsivM2R8Y2GXhfvKJoFM1aDAsmwMBLbbFwAZWR1
 ```
 
-Verify Keypairs file:
+Verify Keypairs file via Solana CLI:
 
 ```bash
 $ solana-keygen pubkey SoLJqsivM2R8Y2GXhfvKJoFM1aDAsmwMBLbbFwAZWR1.json

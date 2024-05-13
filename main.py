@@ -50,66 +50,76 @@ def get_kernel_source(starts_with: str, ends_with: str):
     return source_str
 
 
-def generate_key32(iteration_bytes: np.ubyte):
-    token_bytes = secrets.token_bytes(32 - iteration_bytes) + b"\x00" * iteration_bytes
-    key32 = np.array([x for x in token_bytes], dtype=np.ubyte)
-    return key32
+class Searcher:
+    def __init__(self, *, context, kernel_source, iteration_bits: int):
+        # context and command queue
+        self.context = context
+        self.command_queue = cl.CommandQueue(context)
 
+        # build program and kernel
+        program = cl.Program(context, kernel_source).build()
+        self.kernel = cl.Kernel(program, "generate_pubkey")
 
-def increase_key32(
-    *, key32: np.ndarray, iteration_bits: int, iteration_bytes: np.ubyte
-):
-    current_number = int(bytes(key32).hex(), base=16)
-    next_number = current_number + (1 << iteration_bits)
-    _number_bytes = next_number.to_bytes(32, "big")
-    new_key32 = np.array([x for x in _number_bytes], dtype=np.ubyte)
-    carry_index = 0 - iteration_bytes
-    if (new_key32[carry_index] < key32[carry_index]) and new_key32[carry_index] != 0:
-        new_key32[carry_index] = 0
+        self.iteration_bits = iteration_bits
+        self.iteration_bytes = np.ubyte(ceil(iteration_bits / 8))
+        self.global_work_size = (1 << iteration_bits,)
+        self.local_work_size = (32,)
 
-    key32[:] = new_key32
-    return key32
+        self.key32 = self.generate_key32()
 
+    def generate_key32(self):
+        token_bytes = (
+            secrets.token_bytes(32 - self.iteration_bytes)
+            + b"\x00" * self.iteration_bytes
+        )
+        key32 = np.array([x for x in token_bytes], dtype=np.ubyte)
+        return key32
 
-def find(
-    *,
-    context,
-    command_queue,
-    kernel,
-    key32: np.ndarray,
-    iteration_bytes: np.ubyte,
-    global_work_size,
-    local_work_size,
-):
-    memobj_key32 = cl.Buffer(
-        context,
-        cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR,
-        32 * np.ubyte().itemsize,
-        hostbuf=key32,
-    )
-    memobj_output = cl.Buffer(
-        context, cl.mem_flags.READ_WRITE, 33 * np.ubyte().itemsize
-    )
-    memobj_occupied_bytes = cl.Buffer(
-        context,
-        cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR,
-        hostbuf=np.array([iteration_bytes]),
-    )
+    def increase_key32(self):
+        current_number = int(bytes(self.key32).hex(), base=16)
+        next_number = current_number + (1 << self.iteration_bits)
+        _number_bytes = next_number.to_bytes(32, "big")
+        new_key32 = np.array([x for x in _number_bytes], dtype=np.ubyte)
+        carry_index = 0 - self.iteration_bytes
+        if (new_key32[carry_index] < self.key32[carry_index]) and new_key32[
+            carry_index
+        ] != 0:
+            new_key32[carry_index] = 0
 
-    output = np.zeros(33, dtype=np.ubyte)
-    kernel.set_arg(0, memobj_key32)
-    kernel.set_arg(1, memobj_output)
-    kernel.set_arg(2, memobj_occupied_bytes)
+        self.key32[:] = new_key32
 
-    st = time.time()
-    cl.enqueue_nd_range_kernel(command_queue, kernel, global_work_size, local_work_size)
+    def find(self):
+        memobj_key32 = cl.Buffer(
+            self.context,
+            cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR,
+            32 * np.ubyte().itemsize,
+            hostbuf=self.key32,
+        )
+        memobj_output = cl.Buffer(
+            self.context, cl.mem_flags.READ_WRITE, 33 * np.ubyte().itemsize
+        )
+        memobj_occupied_bytes = cl.Buffer(
+            self.context,
+            cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR,
+            hostbuf=np.array([self.iteration_bytes]),
+        )
 
-    cl._enqueue_read_buffer(command_queue, memobj_output, output).wait()
-    logging.info(
-        f"Speed: {global_work_size[0] / ((time.time() - st) * 10**6) :.2f} MH/s"
-    )
+        output = np.zeros(33, dtype=np.ubyte)
+        self.kernel.set_arg(0, memobj_key32)
+        self.kernel.set_arg(1, memobj_output)
+        self.kernel.set_arg(2, memobj_occupied_bytes)
 
-    return output
+        st = time.time()
+        cl.enqueue_nd_range_kernel(
+            self.command_queue, self.kernel, self.global_work_size, self.local_work_size
+        )
+
+        cl._enqueue_read_buffer(self.command_queue, memobj_output, output).wait()
+        logging.info(
+            f"Speed: {self.global_work_size[0] / ((time.time() - st) * 10**6):.2f} MH/s"
+        )
+
+        return output
 
 
 @click.group()
@@ -131,20 +141,38 @@ def cli():
     default="",
 )
 @click.option(
-    "--iteration-bits",
-    type=int,
-    help="Number of the iteration occupied bits. Recommended 24, 26, 28, 30, 32. The larger the bits, the longer it takes to complete an iteration.",
-    default=24,
-)
-@click.option(
     "--count",
     type=int,
     help="Count of pubkeys to generate.",
     default=1,
 )
+@click.option(
+    "--output-dir",
+    type=click.Path(file_okay=False, dir_okay=True, writable=True),
+    help="Output directory.",
+    default="./",
+)
+@click.option(
+    "--select-device/--no-select-device",
+    type=bool,
+    help="Select OpenCL device manually",
+    default=False,
+)
+@click.option(
+    "--iteration-bits",
+    type=int,
+    help="Number of the iteration occupied bits. Recommended 24, 26, 28, 30, 32. The larger the bits, the longer it takes to complete an iteration.",
+    default=24,
+)
 @click.pass_context
 def search_pubkey(
-    ctx, starts_with: str, ends_with: str, iteration_bits: int, count: int
+    ctx,
+    starts_with: str,
+    ends_with: str,
+    count: int,
+    output_dir: str,
+    select_device: bool,
+    iteration_bits: int,
 ):
     """Search Solana vanity pubkey"""
 
@@ -160,45 +188,32 @@ def search_pubkey(
         f"Searching Solana pubkey that starts with '{starts_with}' and ends with '{ends_with}'"
     )
 
+    if select_device:
+        context = cl.create_some_context()
+    else:
+        # get all platforms and devices
+        devices = [
+            device
+            for platform in cl.get_platforms()
+            for device in platform.get_devices()
+        ]
+        context = cl.Context(devices)
+
+    logging.info(f"Searching with {len(context.devices)} OpenCL devices")
+
     kernel_source = get_kernel_source(starts_with, ends_with)
 
-    devices = []
-
-    # get platform and device
-    for platform in cl.get_platforms():
-        devices.extend(platform.get_devices())
-
-    logging.info(f"Searching with {len(devices)} OpenCL devices")
-
-    # context and command queue
-    context = cl.Context(devices)
-    command_queue = cl.CommandQueue(context)
-
-    # build program and kernel
-    program = cl.Program(context, kernel_source).build()
-    kernel = cl.Kernel(program, "generate_pubkey")
-
-    iteration_bytes = np.ubyte(ceil(iteration_bits / 8))
-    global_work_size = (1 << iteration_bits,)
-    local_work_size = (32,)
-
-    key32 = generate_key32(iteration_bytes)
+    searcher = Searcher(
+        context=context,
+        kernel_source=kernel_source,
+        iteration_bits=iteration_bits,
+    )
 
     result_count = 0
 
     while result_count < count:
-        output = find(
-            context=context,
-            command_queue=command_queue,
-            kernel=kernel,
-            key32=key32,
-            iteration_bytes=iteration_bytes,
-            global_work_size=global_work_size,
-            local_work_size=local_work_size,
-        )
-        key32 = increase_key32(
-            key32=key32, iteration_bits=iteration_bits, iteration_bytes=iteration_bytes
-        )
+        output = searcher.find()
+        searcher.increase_key32()
 
         if not output[0]:
             continue
@@ -209,7 +224,10 @@ def search_pubkey(
         pubkey = b58encode(pb_bytes).decode()
 
         logging.info(f"Found: {pubkey}")
-        Path(f"{pubkey}.json").write_text(json.dumps(list(pv_bytes + pb_bytes)))
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
+        Path(output_dir, f"{pubkey}.json").write_text(
+            json.dumps(list(pv_bytes + pb_bytes))
+        )
 
         result_count += 1
 

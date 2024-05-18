@@ -1,4 +1,8 @@
 #define __generic
+#ifndef NULL
+#define NULL 0L
+#endif
+
 typedef int int32_t;
 typedef unsigned long uint64_t;
 typedef long int64_t;
@@ -4598,7 +4602,7 @@ static void cmov__constant(ge_precomp *t, constant ge_precomp *u,
   fe_cmov__constant(t->xy2d, u->xy2d, b);
 }
 
-static void select(ge_precomp *t, int pos, signed char b) {
+static void select_fix(ge_precomp *t, int pos, signed char b) {
   ge_precomp minust;
 
   unsigned char bnegative = negative(b);
@@ -4658,7 +4662,7 @@ void ge_scalarmult_base(ge_p3 *h, const unsigned char *a) {
   ge_p3_0(h);
 
   for (i = 1; i < 64; i += 2) {
-    select(&t, i / 2, e[i]);
+    select_fix(&t, i / 2, e[i]);
     ge_madd(&r, h, &t);
     ge_p1p1_to_p3(h, &r);
   }
@@ -4673,7 +4677,7 @@ void ge_scalarmult_base(ge_p3 *h, const unsigned char *a) {
   ge_p1p1_to_p3(h, &r);
 
   for (i = 0; i < 64; i += 2) {
-    select(&t, i / 2, e[i]);
+    select_fix(&t, i / 2, e[i]);
     ge_madd(&r, h, &t);
     ge_p1p1_to_p3(h, &r);
   }
@@ -4991,11 +4995,11 @@ void ed25519_create_keypair(unsigned char *public_key,
 constant uchar alphabet[] =
     "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
-static uchar *base58_encode(uchar *in, uint *out_len) {
+static uchar *base58_encode(uchar *in, size_t *out_len) {
   size_t in_len = 32, out_length;
   uchar addr[44];
   uchar *out = &addr[0];
-  *out_len = &out_length;
+  *out_len = out_length;
 
   // leading zeroes
   size_t total = 0;
@@ -5053,8 +5057,8 @@ __kernel void generate_pubkey(constant uchar *seed, global uchar *out,
   }
 
   ed25519_create_keypair(public_key, private_key, key_base);
-  uint length;
-  char *addr = base58_encode(public_key, &length);
+  size_t length;
+  uchar *addr = base58_encode(public_key, &length);
 
   // pattern match
   size_t prefix_len = sizeof(PREFIX), suffix_len = sizeof(SUFFIX);

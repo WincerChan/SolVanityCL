@@ -1,9 +1,13 @@
 import json
 import logging
+import os
+import platform
 import secrets
 import sys
 import time
 from math import ceil
+
+os.environ["PYOPENCL_COMPILER_OUTPUT"] = "1"
 from pathlib import Path
 
 import click
@@ -44,7 +48,7 @@ def get_kernel_source(starts_with: str, ends_with: str):
 
     source_str = "".join(source_lines)
 
-    if cl.get_cl_header_version()[0] != 1:
+    if cl.get_cl_header_version()[0] != 1 and platform.system() != "Windows":
         source_str = source_str.replace("#define __generic\n", "")
 
     return source_str
@@ -195,7 +199,7 @@ def search_pubkey(
         devices = [
             device
             for platform in cl.get_platforms()
-            for device in platform.get_devices()
+            for device in platform.get_devices(device_type=cl.device_type.GPU)
         ]
         context = cl.Context(devices)
 

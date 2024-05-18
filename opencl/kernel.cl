@@ -4995,11 +4995,11 @@ void ed25519_create_keypair(unsigned char *public_key,
 constant uchar alphabet[] =
     "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
-static uchar *base58_encode(uchar *in, uint *out_len) {
+static uchar *base58_encode(uchar *in, size_t *out_len) {
   size_t in_len = 32, out_length;
   uchar addr[44];
   uchar *out = &addr[0];
-  *out_len = &out_length;
+  *out_len = out_length;
 
   // leading zeroes
   size_t total = 0;
@@ -5057,8 +5057,8 @@ __kernel void generate_pubkey(constant uchar *seed, global uchar *out,
   }
 
   ed25519_create_keypair(public_key, private_key, key_base);
-  uint length;
-  char *addr = base58_encode(public_key, &length);
+  size_t length;
+  uchar *addr = base58_encode(public_key, &length);
 
   // pattern match
   size_t prefix_len = sizeof(PREFIX), suffix_len = sizeof(SUFFIX);

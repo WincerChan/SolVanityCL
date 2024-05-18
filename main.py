@@ -1,10 +1,13 @@
 import json
 import logging
+import os
 import platform
 import secrets
 import sys
 import time
 from math import ceil
+
+os.environ["PYOPENCL_COMPILER_OUTPUT"] = "1"
 from pathlib import Path
 
 import click

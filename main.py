@@ -199,7 +199,7 @@ def search_pubkey(
         devices = [
             device
             for platform in cl.get_platforms()
-            for device in platform.get_devices()
+            for device in platform.get_devices(device_type=cl.device_type.GPU)
         ]
         context = cl.Context(devices)
 

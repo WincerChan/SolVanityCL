@@ -1,5 +1,6 @@
 import json
 import logging
+import platform
 import secrets
 import sys
 import time
@@ -44,7 +45,7 @@ def get_kernel_source(starts_with: str, ends_with: str):
 
     source_str = "".join(source_lines)
 
-    if cl.get_cl_header_version()[0] != 1:
+    if cl.get_cl_header_version()[0] != 1 and platform.system() != "Windows":
         source_str = source_str.replace("#define __generic\n", "")
 
     return source_str

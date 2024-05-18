@@ -1,3 +1,5 @@
+> This project has been tested and works correctly only on the **arm64 Darwin platform** and **Linux platforms with Nvidia GPUs**. Results may be incorrect on Windows + AMD platforms.
+
 ## Installation
 
 ```bash

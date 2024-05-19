@@ -5049,7 +5049,7 @@ __kernel void generate_pubkey(constant uchar *seed, global uchar *out,
   }
 
   const uint thread_id = get_global_id(0);
-
+  if (thread_id == 0) out[0] = 0;
   // reset last occupied bytes
   for (size_t i = 0; i < *occupied_bytes; i++) {
     uchar key_base_x = key_base[31 - i];
@@ -5079,10 +5079,10 @@ __kernel void generate_pubkey(constant uchar *seed, global uchar *out,
       out[j + 1] = key_base[j];
     }
   }
-  if (length < out[0]) {
-    out[0] = length;
-    for (size_t j = 0; j < 32; j++) {
-      out[j + 1] = key_base[j];
-    }
-  }
+  // if (length < out[0]) {
+  //   out[0] = length;
+  //   for (size_t j = 0; j < 32; j++) {
+  //     out[j + 1] = key_base[j];
+  //   }
+  // }
 }

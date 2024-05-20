@@ -5,18 +5,55 @@ import platform
 import secrets
 import sys
 import time
+from itertools import product
 from math import ceil
+from multiprocessing.pool import ThreadPool
+
+import pyopencl as cl
 
 os.environ["PYOPENCL_COMPILER_OUTPUT"] = "1"
+os.environ["PYOPENCL_NO_CACHE"] = "TRUE"
 from pathlib import Path
 
 import click
 import numpy as np
-import pyopencl as cl
 from base58 import b58decode, b58encode
 from nacl.signing import SigningKey
 
 logging.basicConfig(level="INFO", format="[%(levelname)s %(asctime)s] %(message)s")
+
+
+class HostSetting:
+    def __init__(self, kernel_source: str, iteration_bits: int) -> None:
+        self.iteration_bits = iteration_bits
+        self.iteration_bytes = np.ubyte(ceil(iteration_bits / 8))
+        self.global_work_size = 1 << iteration_bits
+        self.local_work_size = 32
+        self.key32 = self.generate_key32()
+
+        self.kernel_source = kernel_source
+
+    def generate_key32(self):
+        token_bytes = (
+            secrets.token_bytes(32 - self.iteration_bytes)
+            + b"\x00" * self.iteration_bytes
+        )
+        key32 = np.array([x for x in token_bytes], dtype=np.ubyte)
+        return key32
+
+    def increase_key32(self):
+        current_number = int(bytes(self.key32).hex(), base=16)
+        next_number = current_number + (1 << self.iteration_bits)
+        _number_bytes = next_number.to_bytes(32, "big")
+        new_key32 = np.array([x for x in _number_bytes], dtype=np.ubyte)
+        carry_index = 0 - self.iteration_bytes
+        if (new_key32[carry_index] < self.key32[carry_index]) and new_key32[
+            carry_index
+        ] != 0:
+            new_key32[carry_index] = 0
+
+        self.key32[:] = new_key32
+        print(self.key32)
 
 
 def check_character(name: str, character: str):
@@ -29,7 +66,7 @@ def check_character(name: str, character: str):
         raise e
 
 
-def get_kernel_source(starts_with: str, ends_with: str):
+def get_kernel_source(starts_with: str, ends_with: str, cl):
     PREFIX_BYTES = list(bytes(starts_with.encode()))
     SUFFIX_BYTES = list(bytes(ends_with.encode()))
 
@@ -54,73 +91,121 @@ def get_kernel_source(starts_with: str, ends_with: str):
     return source_str
 
 
+def get_all_gpu_devices():
+    devices = [
+        device
+        for platform in cl.get_platforms()
+        for device in platform.get_devices(device_type=cl.device_type.GPU)
+    ]
+    return [d.int_ptr for d in devices]
+
+
+def multi_gpu_init(index: int, setting: HostSetting):
+    # get all platforms and devices
+    try:
+        searcher = Searcher(
+            kernel_source=setting.kernel_source,
+            index=index,
+            setting=setting,
+        )
+
+        return searcher.find()
+    except Exception as e:
+        logging.exception(e)
+    return [0]
+
+
+def save_result(outputs, output_dir):
+    result_count = 0
+    for output in outputs:
+        if not output[0]:
+            continue
+        result_count += 1
+        pv_bytes = bytes(output[1:])
+        pv = SigningKey(pv_bytes)
+        pb_bytes = bytes(pv.verify_key)
+        pubkey = b58encode(pb_bytes).decode()
+
+        logging.info(f"Found: {pubkey}")
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
+        Path(output_dir, f"{pubkey}.json").write_text(
+            json.dumps(list(pv_bytes + pb_bytes))
+        )
+    time.sleep(0.1)
+    return result_count
+
+
 class Searcher:
-    def __init__(self, *, context, kernel_source, iteration_bits: int):
+    def __init__(
+        self, *, kernel_source, index: int, setting: HostSetting, context=None
+    ):
+
+        device_ids = get_all_gpu_devices()
         # context and command queue
-        self.context = context
-        self.command_queue = cl.CommandQueue(context)
+        if context:
+            self.context = context
+            self.gpu_chunks = 1
+        else:
+            self.context = cl.Context(
+                [cl.Device.from_int_ptr(device_ids[index])],
+            )
+            self.gpu_chunks = len(device_ids)
+        self.command_queue = cl.CommandQueue(self.context)
+
+        self.setting = setting
+        self.index = index
 
         # build program and kernel
-        program = cl.Program(context, kernel_source).build()
+        program = cl.Program(self.context, kernel_source).build()
+        self.program = program
         self.kernel = cl.Kernel(program, "generate_pubkey")
 
-        self.iteration_bits = iteration_bits
-        self.iteration_bytes = np.ubyte(ceil(iteration_bits / 8))
-        self.global_work_size = (1 << iteration_bits,)
-        self.local_work_size = (32,)
-
-        self.key32 = self.generate_key32()
-
-    def generate_key32(self):
-        token_bytes = (
-            secrets.token_bytes(32 - self.iteration_bytes)
-            + b"\x00" * self.iteration_bytes
-        )
-        key32 = np.array([x for x in token_bytes], dtype=np.ubyte)
-        return key32
-
-    def increase_key32(self):
-        current_number = int(bytes(self.key32).hex(), base=16)
-        next_number = current_number + (1 << self.iteration_bits)
-        _number_bytes = next_number.to_bytes(32, "big")
-        new_key32 = np.array([x for x in _number_bytes], dtype=np.ubyte)
-        carry_index = 0 - self.iteration_bytes
-        if (new_key32[carry_index] < self.key32[carry_index]) and new_key32[
-            carry_index
-        ] != 0:
-            new_key32[carry_index] = 0
-
-        self.key32[:] = new_key32
+    def filter_valid_result(self, outputs):
+        valid_outputs = []
+        for output in outputs:
+            if not output[0]:
+                continue
+            valid_outputs.append(output)
+        return valid_outputs
 
     def find(self):
         memobj_key32 = cl.Buffer(
             self.context,
             cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR,
             32 * np.ubyte().itemsize,
-            hostbuf=self.key32,
+            hostbuf=self.setting.key32,
         )
         memobj_output = cl.Buffer(
             self.context, cl.mem_flags.READ_WRITE, 33 * np.ubyte().itemsize
         )
+
         memobj_occupied_bytes = cl.Buffer(
             self.context,
             cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR,
-            hostbuf=np.array([self.iteration_bytes]),
+            hostbuf=np.array([self.setting.iteration_bytes]),
         )
-
+        memobj_group_offset = cl.Buffer(
+            self.context,
+            cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR,
+            hostbuf=np.array([self.index]),
+        )
         output = np.zeros(33, dtype=np.ubyte)
         self.kernel.set_arg(0, memobj_key32)
         self.kernel.set_arg(1, memobj_output)
         self.kernel.set_arg(2, memobj_occupied_bytes)
+        self.kernel.set_arg(3, memobj_group_offset)
 
         st = time.time()
+        global_worker_size = self.setting.global_work_size // self.gpu_chunks
         cl.enqueue_nd_range_kernel(
-            self.command_queue, self.kernel, self.global_work_size, self.local_work_size
+            self.command_queue,
+            self.kernel,
+            (global_worker_size,),
+            (self.setting.local_work_size,),
         )
-
         cl._enqueue_read_buffer(self.command_queue, memobj_output, output).wait()
         logging.info(
-            f"Speed: {self.global_work_size[0] / ((time.time() - st) * 10**6):.2f} MH/s"
+            f"GPU {self.index} Speed: {global_worker_size/ ((time.time() - st) * 10**6):.2f} MH/s"
         )
 
         return output
@@ -192,50 +277,32 @@ def search_pubkey(
         f"Searching Solana pubkey that starts with '{starts_with}' and ends with '{ends_with}'"
     )
 
-    if select_device:
-        context = cl.create_some_context()
-    else:
-        # get all platforms and devices
-        devices = [
-            device
-            for platform in cl.get_platforms()
-            for device in platform.get_devices(device_type=cl.device_type.GPU)
-        ]
-        context = cl.Context(devices)
-
-    logging.info(f"Searching with {len(context.devices)} OpenCL devices")
-
-    kernel_source = get_kernel_source(starts_with, ends_with)
-
-    searcher = Searcher(
-        context=context,
-        kernel_source=kernel_source,
-        iteration_bits=iteration_bits,
-    )
-
+    gpu_counts = len(get_all_gpu_devices())
+    kernel_source = get_kernel_source(starts_with, ends_with, cl)
+    setting = HostSetting(kernel_source, iteration_bits)
     result_count = 0
 
-    while result_count < count:
-        output = searcher.find()
-        searcher.increase_key32()
-
-        if not output[0]:
-            continue
-
-        pv_bytes = bytes(output[1:])
-        pv = SigningKey(pv_bytes)
-        pb_bytes = bytes(pv.verify_key)
-        pubkey = b58encode(pb_bytes).decode()
-
-        logging.info(f"Found: {pubkey}")
-        Path(output_dir).mkdir(parents=True, exist_ok=True)
-        Path(output_dir, f"{pubkey}.json").write_text(
-            json.dumps(list(pv_bytes + pb_bytes))
+    logging.info(f"Searching with {gpu_counts} OpenCL devices")
+    if select_device:
+        context = cl.create_some_context()
+        searcher = Searcher(
+            kernel_source=setting.kernel_source,
+            index=0,
+            setting=setting,
+            context=context,
         )
+        while result_count < count:
+            output = searcher.find()
+            setting.increase_key32()
+            save_result([output], output_dir)
 
-        result_count += 1
-
-        time.sleep(0.1)
+    with ThreadPool(processes=gpu_counts) as pool:
+        while result_count < count:
+            results = pool.starmap(
+                multi_gpu_init, [(x, setting) for x in range(gpu_counts)]
+            )
+            setting.increase_key32()
+            save_result(results, output_dir)
 
 
 @cli.command(context_settings={"show_default": True})

@@ -7,7 +7,7 @@ import sys
 import time
 from itertools import product
 from math import ceil
-from multiprocessing.pool import ThreadPool
+from multiprocessing.pool import Pool
 
 import pyopencl as cl
 
@@ -131,7 +131,6 @@ def save_result(outputs, output_dir):
         Path(output_dir, f"{pubkey}.json").write_text(
             json.dumps(list(pv_bytes + pb_bytes))
         )
-    time.sleep(0.1)
     return result_count
 
 
@@ -276,8 +275,9 @@ def search_pubkey(
     logging.info(
         f"Searching Solana pubkey that starts with '{starts_with}' and ends with '{ends_with}'"
     )
+    with Pool() as pool:
+        gpu_counts = len(pool.apply(get_all_gpu_devices))
 
-    gpu_counts = len(get_all_gpu_devices())
     kernel_source = get_kernel_source(starts_with, ends_with, cl)
     setting = HostSetting(kernel_source, iteration_bits)
     result_count = 0
@@ -294,15 +294,17 @@ def search_pubkey(
         while result_count < count:
             output = searcher.find()
             setting.increase_key32()
-            save_result([output], output_dir)
+            result_count += save_result([output], output_dir)
+        return
 
-    with ThreadPool(processes=gpu_counts) as pool:
+    with Pool(processes=gpu_counts) as pool:
         while result_count < count:
             results = pool.starmap(
                 multi_gpu_init, [(x, setting) for x in range(gpu_counts)]
             )
+            result_count += save_result(results, output_dir)
             setting.increase_key32()
-            save_result(results, output_dir)
+            time.sleep(0.1)
 
 
 @cli.command(context_settings={"show_default": True})

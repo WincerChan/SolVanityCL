@@ -5041,19 +5041,18 @@ static uchar *base58_encode(uchar *in, size_t *out_len) {
 }
 
 __kernel void generate_pubkey(constant uchar *seed, global uchar *out,
-                              global uchar *occupied_bytes) {
+                              global uchar *occupied_bytes,
+                              global uchar *group_offset) {
   uchar public_key[32], private_key[64];
   uchar key_base[32];
   for (size_t i = 0; i < 32; i++) {
     key_base[i] = seed[i];
   }
-
-  const uint thread_id = get_global_id(0);
+  const global_id = (*group_offset) * get_global_size(0) + get_global_id(0);
 
   // reset last occupied bytes
   for (size_t i = 0; i < *occupied_bytes; i++) {
-    uchar key_base_x = key_base[31 - i];
-    key_base[31 - i] += ((thread_id >> (i * 8)) & 0xFF);
+    key_base[31 - i] += ((global_id >> (i * 8)) & 0xFF);
   }
 
   ed25519_create_keypair(public_key, private_key, key_base);

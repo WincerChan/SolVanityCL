@@ -1,5 +1,7 @@
 > This project has been tested and works correctly only on the **arm64 Darwin platform** and **Linux platforms with Nvidia GPUs**. Results may be incorrect on Windows + AMD platforms.
 
+> Support for NVIDIA Multi-GPU. Tested with 2 GPUs, 4 GPUs, and 8 GPUs. Due to a known issue (busy-wait) when running OpenCL in NVIDIA, each GPU will fully utilize one CPU core. Make sure you have enough CPU cores.
+
 ## Installation
 
 ```bash

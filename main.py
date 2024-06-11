@@ -53,7 +53,6 @@ class HostSetting:
             new_key32[carry_index] = 0
 
         self.key32[:] = new_key32
-        print(self.key32)
 
 
 def check_character(name: str, character: str):

@@ -3,3 +3,4 @@ pyopencl
 base58
 PyNaCl
 multiprocess
+numpy==1.26.4

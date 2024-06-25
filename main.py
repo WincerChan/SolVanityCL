@@ -84,6 +84,9 @@ def get_kernel_source(starts_with: str, ends_with: str, cl):
 
     source_str = "".join(source_lines)
 
+    if "NVIDIA" in str(cl.get_platforms()) and platform.system() == "Windows":
+        source_str = source_str.replace("#define __generic\n", "")
+
     if cl.get_cl_header_version()[0] != 1 and platform.system() != "Windows":
         source_str = source_str.replace("#define __generic\n", "")
 

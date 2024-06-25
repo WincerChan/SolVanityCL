@@ -5,6 +5,7 @@ import platform
 import secrets
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from itertools import product
 from math import ceil
 from multiprocessing.pool import Pool
@@ -100,6 +101,16 @@ def get_all_gpu_devices():
         for device in platform.get_devices(device_type=cl.device_type.GPU)
     ]
     return [d.int_ptr for d in devices]
+
+
+def single_gpu_init(context, setting):
+    searcher = Searcher(
+        kernel_source=setting.kernel_source,
+        index=0,
+        setting=setting,
+        context=context,
+    )
+    return [searcher.find()]
 
 
 def multi_gpu_init(index: int, setting: HostSetting):
@@ -286,17 +297,14 @@ def search_pubkey(
 
     logging.info(f"Searching with {gpu_counts} OpenCL devices")
     if select_device:
-        context = cl.create_some_context()
-        searcher = Searcher(
-            kernel_source=setting.kernel_source,
-            index=0,
-            setting=setting,
-            context=context,
-        )
-        while result_count < count:
-            output = searcher.find()
-            setting.increase_key32()
-            result_count += save_result([output], output_dir)
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            context = cl.create_some_context()
+            while result_count < count:
+                future = executor.submit(single_gpu_init, context, setting)
+                result = future.result()
+                result_count += save_result(result, output_dir)
+                setting.increase_key32()
+                time.sleep(0.1)
         return
 
     with Pool(processes=gpu_counts) as pool:

@@ -1,18 +1,33 @@
-> This project has been tested and works correctly only on the **arm64 Darwin platform** and **Linux platforms with Nvidia GPUs**. Results may be incorrect on Windows + AMD platforms.
+> This project has been tested and works correctly only on the **arm64 Darwin platform**, **Linux platforms with Nvidia GPUs** and **Windows platforms with Nvidia GPUs** . Results may be incorrect on Windows + AMD platforms (Especially the Vega architecture).
 
 > Support for NVIDIA Multi-GPU. Tested with 2 GPUs, 4 GPUs, and 8 GPUs. Due to a known issue (busy-wait) when running OpenCL in NVIDIA, each GPU will fully utilize one CPU core. Make sure you have enough CPU cores.
 
 ## Installation
 
 ```bash
-python3 -m pip install -r requirements.txt
+$ python3 -m pip install -r requirements.txt
 
 # or
 
-pip3 install -r requirements.txt
+$ pip3 install -r requirements.txt
 ```
 
 Requires Python 3.6 or higher.
+
+## Docker
+
+Only works on Linux platforms with Nvidia GPUs. [Check this doc](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html#installation).
+
+```bash
+$ docker run --rm -it loerfy/sol_vanity_cl:latest
+
+# or built locally
+
+$ docker build -t sol_vanity_cl .
+$ docker run --rm -it sol_vanity_cl
+```
+
+You will enter the container. All dependencies have been installed.
 
 ## Usage
 

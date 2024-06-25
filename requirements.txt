@@ -1,6 +1,5 @@
-click
+click>=8.1.0
 pyopencl
 base58
 PyNaCl
-multiprocess
 numpy==1.26.4

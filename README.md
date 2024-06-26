@@ -21,13 +21,18 @@ Only works on Linux platforms with Nvidia GPUs. [Check this doc](https://docs.nv
 ```bash
 $ docker run --rm -it loerfy/sol_vanity_cl:latest
 
-# or built locally
+# or build locally
 
 $ docker build -t sol_vanity_cl .
 $ docker run --rm -it sol_vanity_cl
 ```
 
-You will enter the container. All dependencies have been installed.
+You will enter the container. The source code is located in the /app directory in the container, and all dependencies have been installed.
+
+Use the Docker image loerfy/sol_vanity_cl:latest. You can easily use vast.ai or runpod.io to run this program. Please note:
+
+1. The device’s CUDA version should be greater than 12.0.
+2. The source code is located in the /app directory, so you don’t need to download the code from GitHub.
 
 ## Usage
 

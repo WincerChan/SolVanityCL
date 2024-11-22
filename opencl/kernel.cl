@@ -5009,6 +5009,7 @@ static uchar *base58_encode(uchar *in, size_t *out_len) {
   in += total;
   in_len -= total;
   out += total;
+  size_t zero_length = total;
 
   // encoding
   size_t idx = 0;
@@ -5037,6 +5038,9 @@ static uchar *base58_encode(uchar *in, size_t *out_len) {
     out[c_idx] = alphabet[(uchar)out[c_idx]];
   }
   *out_len = total;
+  if (zero_length) {
+    out -= zero_length;
+  }
   return out;
 }
 

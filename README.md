@@ -21,10 +21,6 @@ Requires Python 3.6 or higher.
 Only works on Linux platforms with Nvidia GPUs. [Check this doc](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html#installation).
 
 ```bash
-$ docker run --rm -it loerfy/sol_vanity_cl:latest
-
-# or build locally
-
 $ docker build -t sol_vanity_cl .
 $ docker run --rm -it sol_vanity_cl
 ```

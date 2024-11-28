@@ -6,7 +6,6 @@ import secrets
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
-from itertools import product
 from math import ceil
 from multiprocessing.pool import Pool
 
@@ -151,7 +150,6 @@ class Searcher:
     def __init__(
         self, *, kernel_source, index: int, setting: HostSetting, context=None
     ):
-
         device_ids = get_all_gpu_devices()
         # context and command queue
         if context:
@@ -323,10 +321,10 @@ def show_device():
 
     platforms = cl.get_platforms()
 
-    for p_index, platform in enumerate(platforms):
-        print(f"Platform {p_index}: {platform.name}")
+    for p_index, platform_ in enumerate(platforms):
+        print(f"Platform {p_index}: {platform_.name}")
 
-        devices = platform.get_devices()
+        devices = platform_.get_devices()
 
         for d_index, device in enumerate(devices):
             print(f"- Device {d_index}: {device.name}")

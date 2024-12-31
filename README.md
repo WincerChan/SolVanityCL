@@ -57,7 +57,7 @@ Usage: main.py search-pubkey [OPTIONS]
   Search Solana vanity pubkey
 
 Options:
-  --starts-with TEXT              Public key starts with the indicated prefix.
+  --starts-with TEXT              Public key starts with the indicated prefix. Split by comma to search multiple prefixes.
   --ends-with TEXT                Public key ends with the indicated suffix.
   --count INTEGER                 Count of pubkeys to generate.  [default: 1]
   --output-dir DIRECTORY          Output directory.  [default: ./]

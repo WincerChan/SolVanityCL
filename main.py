@@ -8,6 +8,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from math import ceil
 from multiprocessing.pool import Pool
+from typing import List
 
 import pyopencl as cl
 
@@ -65,7 +66,7 @@ def check_character(name: str, character: str):
         raise e
 
 
-def get_kernel_source(starts_with_list: list[str], ends_with: str, cl):
+def get_kernel_source(starts_with_list: List[str], ends_with: str, cl):
     prefix_bytes_list = [list(bytes(prefix.encode())) for prefix in starts_with_list]
     SUFFIX_BYTES = list(bytes(ends_with.encode()))
 

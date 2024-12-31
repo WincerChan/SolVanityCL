@@ -65,24 +65,50 @@ def check_character(name: str, character: str):
         raise e
 
 
-def get_kernel_source(starts_with: str, ends_with: str, cl):
-    PREFIX_BYTES = list(bytes(starts_with.encode()))
+def get_kernel_source(starts_with_list: list[str], ends_with: str, cl):
+    prefix_bytes_list = [list(bytes(prefix.encode())) for prefix in starts_with_list]
     SUFFIX_BYTES = list(bytes(ends_with.encode()))
+
+    prefixes = []
 
     with open(Path("opencl/kernel.cl"), "r") as f:
         source_lines = f.readlines()
 
     for i, s in enumerate(source_lines):
         if s.startswith("constant uchar PREFIX[]"):
-            source_lines[i] = (
-                f"constant uchar PREFIX[] = {{{', '.join(map(str, PREFIX_BYTES))}}};\n"
-            )
+            # Replace with multiple PREFIX arrays
+            prefix_lines = []
+            for idx, prefix_bytes in enumerate(prefix_bytes_list):
+                prefix_lines.append(
+                    f"constant uchar PREFIX_{idx + 1}[] = {{{', '.join(map(str, prefix_bytes))}}};\n"
+                )
+                prefixes.append(f"PREFIX_{idx + 1}")
+            source_lines[i] = "".join(prefix_lines)
+            
         if s.startswith("constant uchar SUFFIX[]"):
             source_lines[i] = (
                 f"constant uchar SUFFIX[] = {{{', '.join(map(str, SUFFIX_BYTES))}}};\n"
             )
 
     source_str = "".join(source_lines)
+
+    prefix_code = '''
+    int matched_prefixes = 0;
+    ''' + ''.join([f'''
+  size_t prefix_{i}_len = sizeof({prefix});
+  for (size_t i = 0; i < prefix_{i}_len; i++) {{
+    if (addr[i] != {prefix}[i]) {{
+      break;
+    }}
+    if(i == prefix_{i}_len - 1) {{
+      matched_prefixes++;
+    }}
+  }}
+    ''' for i, prefix in enumerate(prefixes, 1)]) + '''
+    if (matched_prefixes == 0) return;
+    '''
+
+    source_str = source_str.replace("//PREFIXCODE", prefix_code)
 
     if "NVIDIA" in str(cl.get_platforms()) and platform.system() == "Windows":
         source_str = source_str.replace("#define __generic\n", "")
@@ -230,7 +256,7 @@ def cli():
 @click.option(
     "--starts-with",
     type=str,
-    help="Public key starts with the indicated prefix.",
+    help="Public key starts with the indicated prefix. Split by comma to search multiple prefixes.",
     default="",
 )
 @click.option(
@@ -280,16 +306,18 @@ def search_pubkey(
         click.echo(ctx.get_help())
         sys.exit(1)
 
-    check_character("starts_with", starts_with)
+    starts_with_list = [s.strip() for s in starts_with.split(',') if s.strip()]
+    for prefix in starts_with_list:
+        check_character("starts_with", prefix)
     check_character("ends_with", ends_with)
 
     logging.info(
-        f"Searching Solana pubkey that starts with '{starts_with}' and ends with '{ends_with}'"
+        f"Searching Solana pubkey that starts with {' or '.join(starts_with_list)} and ends with {ends_with}"
     )
     with Pool() as pool:
         gpu_counts = len(pool.apply(get_all_gpu_devices))
 
-    kernel_source = get_kernel_source(starts_with, ends_with, cl)
+    kernel_source = get_kernel_source(starts_with_list, ends_with, cl)
     setting = HostSetting(kernel_source, iteration_bits)
     result_count = 0
 

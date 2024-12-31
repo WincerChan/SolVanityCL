@@ -9,7 +9,8 @@ typedef long int64_t;
 
 typedef int32_t fe[10];
 
-constant uchar PREFIX[] = {83, 111, 76};
+/*PREFIX*/
+constant uchar PREFIX[] = {83, 111, 76}; 
 constant uchar SUFFIX[] = {};
 
 static uint64_t load_3(const unsigned char *in) {
@@ -5064,14 +5065,11 @@ __kernel void generate_pubkey(constant uchar *seed, global uchar *out,
   uchar *addr = base58_encode(public_key, &length);
 
   // pattern match
-  size_t prefix_len = sizeof(PREFIX), suffix_len = sizeof(SUFFIX);
+  //PREFIXCODE
+
+  size_t suffix_len = sizeof(SUFFIX);
   for (size_t i = 0; i < suffix_len; i++) {
     if (addr[length - suffix_len + i] != SUFFIX[i])
-      return;
-  }
-
-  for (size_t i = 0; i < prefix_len; i++) {
-    if (addr[i] != PREFIX[i])
       return;
   }
 

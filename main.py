@@ -108,7 +108,8 @@ def get_kernel_source(starts_with_list: list[str], ends_with: str, cl):
     if (matched_prefixes == 0) return;
     '''
 
-    source_str = source_str.replace("//PREFIXCODE", prefix_code)
+    if len(prefixes) > 0:
+        source_str = source_str.replace("//PREFIXCODE", prefix_code)
 
     if "NVIDIA" in str(cl.get_platforms()) and platform.system() == "Windows":
         source_str = source_str.replace("#define __generic\n", "")

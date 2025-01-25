@@ -8,14 +8,14 @@ RUN apt-get update && apt-get install -y \
     git
 
 # Install specific version of click
-RUN pip3 install base58 click
+RUN pip3 install base58 click pyopencl PyNaCl numpy==1.26.4
+
 # Clone repository
 RUN git clone https://github.com/WincerChan/SolVanityCL.git /app
 
 WORKDIR /app
 
 # Install requirements, forcing latest compatible versions
-RUN pip3 install --upgrade-strategy only-if-needed -r requirements.txt
 
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8

@@ -252,18 +252,20 @@ def cli():
     default="./",
 )
 @click.option(
-    "--select-device",
-    is_flag=True,
+    "--select-device/--no-select-device",
+    type=bool,
     help="Select OpenCL device manually",
     default=False,
 )
 @click.option(
     "--iteration-bits",
     type=int,
-    help="Number of the iteration occupied bits. Recommended 24, 26, 28, 30, 32.",
+    help="Number of the iteration occupied bits. Recommended 24, 26, 28, 30, 32. The larger the bits, the longer it takes to complete an iteration.",
     default=24,
 )
+@click.pass_context
 def search_pubkey(
+    ctx,
     starts_with: str,
     ends_with: str,
     count: int,
@@ -275,7 +277,7 @@ def search_pubkey(
 
     if not starts_with and not ends_with:
         print("Please provides at least [starts with] or [ends with]\n")
-        click.echo(click.get_current_context().get_help())
+        click.echo(ctx.get_help())
         sys.exit(1)
 
     check_character("starts_with", starts_with)

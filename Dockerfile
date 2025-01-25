@@ -14,8 +14,9 @@ RUN git clone https://github.com/WincerChan/SolVanityCL.git /app
 # Set working directory
 WORKDIR /app
 
-# Install Python requirements
-RUN pip3 install -r requirements.txt
+# Install Python requirements with a specific Click version
+RUN pip3 install click==8.0.4 && \
+    pip3 install -r requirements.txt
 
 # Set environment variables
 ENV LANG=C.UTF-8

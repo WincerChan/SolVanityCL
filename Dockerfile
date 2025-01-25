@@ -1,27 +1,33 @@
 FROM nvidia/opencl:latest
 
-# 更新包列表并安装 Python 3 和 pip
+# Install Python and required packages
 RUN apt-get update && apt-get install -y \
     python3 \
-    python3-pip
-
-RUN apt-get install -y \
+    python3-pip \
     python3-pyopencl \
-    python3-nacl
+    python3-nacl \
+    python3-flask
 
-# 安装 Python 依赖
-RUN pip3 install base58 click
-# 环境变量
+# Install Python dependencies
+RUN pip3 install base58 click flask
+
+# Environment variables
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 
-# 将当前目录的内容拷贝到 Docker 容器中的 /app 目录
-COPY opencl /app/opencl
-COPY main.py /app
+# Create app and results directories
+RUN mkdir -p /app/results
 
-# 设置工作目录
+# Copy application files
+COPY opencl /app/opencl
+COPY main.py /app/
+COPY web_server.py /app/
+
+# Set working directory
 WORKDIR /app
 
+# Expose port for web access
+EXPOSE 8000
 
-# 使用 bash 作为入口点
-ENTRYPOINT ["/bin/bash"]
+# Start both the vanity address generator and web server
+CMD python3 main.py search-pubkey --ends-with pump --output-dir /app/results & python3 web_server.py

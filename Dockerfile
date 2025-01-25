@@ -30,4 +30,4 @@ WORKDIR /app
 EXPOSE 8000
 
 # Start both the vanity address generator and web server
-CMD python3 main.py search-pubkey --ends-with pump --output-dir /app/results & python3 web_server.py
+CMD ["python3", "main.py", "search-pubkey", "--ends-with", "pump", "--count", "1000", "--output-dir", "/app/results"]

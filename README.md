@@ -74,18 +74,20 @@ Options:
 Example:
 
 ```bash
-$ python main.py search-pubkey --starts-with SoL
-
-[INFO 2024-05-11 03:17:57,110] Searching Solana pubkey that starts with 'SoL' and ends with ''
-[INFO 2024-05-11 03:17:57,161] Searching with 1 OpenCL devices
-[INFO 2024-05-11 03:18:06,034] Speed: 1.89 MH/s
-[INFO 2024-05-11 03:18:06,036] Found: SoLJqsivM2R8Y2GXhfvKJoFM1aDAsmwMBLbbFwAZWR1
+$ python main.py search-pubkey --starts-with SoL # run
+$ solana-keygen pubkey SoLxxxxxxxxxxx.json # verify
 ```
 
-Verify Keypairs file via Solana CLI:
 
-```bash
-$ solana-keygen pubkey SoLJqsivM2R8Y2GXhfvKJoFM1aDAsmwMBLbbFwAZWR1.json
+## FAQs
 
-SoLJqsivM2R8Y2GXhfvKJoFM1aDAsmwMBLbbFwAZWR1
-```
+See [FAQs.md](./FAQs.md).
+
+
+## Donations
+
+If you find this project helpful, please consider making a donation:
+
+SOLANA: `PRM3ZUA5N2PRLKVBCL3SR3JS934M9TZKUZ7XTLUS223`
+EVM: `0x8108003004784434355758338583453734488488`
+

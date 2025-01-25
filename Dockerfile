@@ -1,4 +1,5 @@
-FROM nvidia/opencl:devel-ubuntu20.04
+FROM nvidia/opencl:latest
+
 
 # System dependencies
 RUN apt-get update && apt-get install -y \

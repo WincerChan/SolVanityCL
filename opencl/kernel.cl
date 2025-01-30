@@ -3830,7 +3830,7 @@ static uchar * base58_encode(uchar *in, size_t *out_len, uchar *out) {
 __kernel void generate_pubkey(constant uchar *seed, global uchar *out,
                               global uchar *occupied_bytes,
                               global uchar *group_offset) {
-  uchar public_key[32] __attribute__((aligned(32)));
+  uchar public_key[32] __attribute__((aligned(4)));
   uchar private_key[64];
   uchar key_base[32];
   #pragma unroll
@@ -3846,10 +3846,10 @@ __kernel void generate_pubkey(constant uchar *seed, global uchar *out,
 
   ed25519_create_keypair(public_key, private_key, key_base);
   size_t length;
-  uchar addr_buffer[45] __attribute__((aligned(32)));
+  uchar addr_buffer[45] __attribute__((aligned(4)));
   uchar *addr_raw = base58_encode(public_key, &length, addr_buffer);
 
-  int any_mismatch = 0;
+  unsigned int any_mismatch = 0;
   #pragma unroll
   for (size_t i = 0; i < sizeof(SUFFIX); i++) {
     any_mismatch |= addr_raw[length - sizeof(SUFFIX) + i] ^ alphabet_indices[SUFFIX[i]];

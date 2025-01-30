@@ -4127,6 +4127,7 @@ void ge_scalarmult_base(ge_p3 *h, const unsigned char *a) {
   ge_precomp t;
   int i;
 
+  #pragma unroll
   for (i = 0; i < 32; ++i) {
     e[2 * i + 0] = (a[i] >> 0) & 15;
     e[2 * i + 1] = (a[i] >> 4) & 15;
@@ -4136,6 +4137,7 @@ void ge_scalarmult_base(ge_p3 *h, const unsigned char *a) {
   /* e[63] is between 0 and 7 */
   carry = 0;
 
+  #pragma unroll
   for (i = 0; i < 63; ++i) {
     e[i] += carry;
     carry = e[i] + 8;
@@ -4288,7 +4290,7 @@ int sha512(const unsigned char *message, unsigned char *out) {
   md.state[7] = UINT64_C(0x5be0cd19137e2179);
 
   // sha512_update inlined
-  // 
+  //
   // All `if` statements from this function are eliminated if we
   // will only ever hash a 32 byte seed input. So inlining this
   // has a drastic speed improvement on GPUs.
@@ -4302,7 +4304,7 @@ int sha512(const unsigned char *message, unsigned char *out) {
   for (int i = 0; i < 32; ++i) md.buf[i] = message[i];
 
   // sha512_final inlined
-  // 
+  //
   // As update was effectively elimiated, the only time we do
   // sha512_compress now is in the finalize function. We can also
   // optimize this:
@@ -4385,15 +4387,15 @@ constant uchar alphabet[] =
 static void base58_encode(uchar *in, size_t *out_len, uchar *out) {
   unsigned int binary[8];
   uint64_t intermediate[9];
-  
+
   #define REV_ENDIAN(a, i) ( \
   (((unsigned int) a[i * 4 + 0]) << 24) | \
   (((unsigned int) a[i * 4 + 1]) << 16) | \
   (((unsigned int) a[i * 4 + 2]) << 8) | \
   (((unsigned int) a[i * 4 + 3])) )
-  
+
   #define INIT_BINARY(i) binary[i] = REV_ENDIAN(in, i);
-  
+
   INIT_BINARY(0)
   INIT_BINARY(1)
   INIT_BINARY(2)
@@ -4402,12 +4404,12 @@ static void base58_encode(uchar *in, size_t *out_len, uchar *out) {
   INIT_BINARY(5)
   INIT_BINARY(6)
   INIT_BINARY(7)
-  
+
   unsigned int in_leading_0s = (clz(binary[0]) + (binary[0] == 0) * clz(binary[1])) >> 3;
   if (in_leading_0s == 8) {
-    for (; in_leading_0s < 32; in_leading_0s++) if (in[in_leading_0s]) break;   
+    for (; in_leading_0s < 32; in_leading_0s++) if (in[in_leading_0s]) break;
   }
-  
+
   intermediate[0] = 0;
   intermediate[1] = 0;
   intermediate[2] = 0;
@@ -4417,7 +4419,7 @@ static void base58_encode(uchar *in, size_t *out_len, uchar *out) {
   intermediate[6] = 0;
   intermediate[7] = 0;
   intermediate[8] = 0;
-  
+
   intermediate[1] += (uint64_t) binary[0] * (uint64_t) 513735UL;
   intermediate[2] += (uint64_t) binary[0] * (uint64_t) 77223048UL;
   intermediate[3] += (uint64_t) binary[0] * (uint64_t) 437087610UL;
@@ -4454,7 +4456,7 @@ static void base58_encode(uchar *in, size_t *out_len, uchar *out) {
   intermediate[7] += (uint64_t) binary[6] * (uint64_t) 6UL;
   intermediate[8] += (uint64_t) binary[6] * (uint64_t) 356826688UL;
   intermediate[8] += (uint64_t) binary[7] * (uint64_t) 1UL;
-  
+
   intermediate[7] += intermediate[8] / 656356768UL;
   intermediate[8] %= 656356768UL;
   intermediate[6] += intermediate[7] / 656356768UL;
@@ -4471,14 +4473,14 @@ static void base58_encode(uchar *in, size_t *out_len, uchar *out) {
   intermediate[2] %= 656356768UL;
   intermediate[0] += intermediate[1] / 656356768UL;
   intermediate[1] %= 656356768UL;
-  
+
   #define DO_FINAL(i) \
   out[5 * i + 4] = ((((unsigned int) intermediate[i]) / 1U       ) % 58U); \
   out[5 * i + 3] = ((((unsigned int) intermediate[i]) / 58U      ) % 58U); \
   out[5 * i + 2] = ((((unsigned int) intermediate[i]) / 3364U    ) % 58U); \
   out[5 * i + 1] = ((((unsigned int) intermediate[i]) / 195112U  ) % 58U); \
   out[5 * i + 0] = ( ((unsigned int) intermediate[i]) / 11316496U);
-  
+
   DO_FINAL(0)
   DO_FINAL(1)
   DO_FINAL(2)
@@ -4488,20 +4490,22 @@ static void base58_encode(uchar *in, size_t *out_len, uchar *out) {
   DO_FINAL(6)
   DO_FINAL(7)
   DO_FINAL(8)
-  
+
   unsigned int t = REV_ENDIAN(out, 0);
   unsigned int raw_leading_0s = (clz(t) + (t == 0) * clz(REV_ENDIAN(out, 1))) >> 3;
   if (raw_leading_0s == 8) {
     for (; raw_leading_0s < 45; raw_leading_0s++) if (out[raw_leading_0s]) break;
   }
-  
+
   unsigned int skip = (raw_leading_0s - in_leading_0s) * (raw_leading_0s > in_leading_0s);
   #pragma unroll
   for (int i = 0; i < 45; i++) out[i] = alphabet[out[(skip + i) * ((skip + i) < 45)]];
   *out_len = (9 * 5) - skip;
 }
 
-__kernel void generate_pubkey(constant uchar *seed, global uchar *out, global uchar *group_offset) {
+__kernel void generate_pubkey(constant uchar *seed, global uchar *out,
+                              global uchar *occupied_bytes,
+                              global uchar *group_offset) {
   uchar public_key[32], private_key[64];
   uchar key_base[32];
   #pragma unroll
@@ -4511,8 +4515,7 @@ __kernel void generate_pubkey(constant uchar *seed, global uchar *out, global uc
   const int global_id = (*group_offset) * get_global_size(0) + get_global_id(0);
 
   // reset last occupied bytes
-  #pragma unroll
-  for (size_t i = 0; i < OCCUPIED_BYTES; i++) {
+  for (size_t i = 0; i < *occupied_bytes; i++) {
     key_base[31 - i] += ((global_id >> (i * 8)) & 0xFF);
   }
 
@@ -4543,6 +4546,6 @@ __kernel void generate_pubkey(constant uchar *seed, global uchar *out, global uc
       for (size_t j = 0; j < 32; j++) {
         out[j + 1] = key_base[j];
       }
-    }  
+    }
   }
 }

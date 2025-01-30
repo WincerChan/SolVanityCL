@@ -86,73 +86,6 @@ void fe_0(__generic fe h) {
   h[9] = 0;
 }
 
-constant ge_precomp Bi[8] = {
-    {
-        {25967493, -14356035, 29566456, 3660896, -12694345, 4014787, 27544626,
-         -11754271, -6079156, 2047605},
-        {-12545711, 934262, -2722910, 3049990, -727428, 9406986, 12720692,
-         5043384, 19500929, -15469378},
-        {-8738181, 4489570, 9688441, -14785194, 10184609, -12363380, 29287919,
-         11864899, -24514362, -4438546},
-    },
-    {
-        {15636291, -9688557, 24204773, -7912398, 616977, -16685262, 27787600,
-         -14772189, 28944400, -1550024},
-        {16568933, 4717097, -11556148, -1102322, 15682896, -11807043, 16354577,
-         -11775962, 7689662, 11199574},
-        {30464156, -5976125, -11779434, -15670865, 23220365, 15915852, 7512774,
-         10017326, -17749093, -9920357},
-    },
-    {
-        {10861363, 11473154, 27284546, 1981175, -30064349, 12577861, 32867885,
-         14515107, -15438304, 10819380},
-        {4708026, 6336745, 20377586, 9066809, -11272109, 6594696, -25653668,
-         12483688, -12668491, 5581306},
-        {19563160, 16186464, -29386857, 4097519, 10237984, -4348115, 28542350,
-         13850243, -23678021, -15815942},
-    },
-    {
-        {5153746, 9909285, 1723747, -2777874, 30523605, 5516873, 19480852,
-         5230134, -23952439, -15175766},
-        {-30269007, -3463509, 7665486, 10083793, 28475525, 1649722, 20654025,
-         16520125, 30598449, 7715701},
-        {28881845, 14381568, 9657904, 3680757, -20181635, 7843316, -31400660,
-         1370708, 29794553, -1409300},
-    },
-    {
-        {-22518993, -6692182, 14201702, -8745502, -23510406, 8844726, 18474211,
-         -1361450, -13062696, 13821877},
-        {-6455177, -7839871, 3374702, -4740862, -27098617, -10571707, 31655028,
-         -7212327, 18853322, -14220951},
-        {4566830, -12963868, -28974889, -12240689, -7602672, -2830569, -8514358,
-         -10431137, 2207753, -3209784},
-    },
-    {
-        {-25154831, -4185821, 29681144, 7868801, -6854661, -9423865, -12437364,
-         -663000, -31111463, -16132436},
-        {25576264, -2703214, 7349804, -11814844, 16472782, 9300885, 3844789,
-         15725684, 171356, 6466918},
-        {23103977, 13316479, 9739013, -16149481, 817875, -15038942, 8965339,
-         -14088058, -30714912, 16193877},
-    },
-    {
-        {-33521811, 3180713, -2394130, 14003687, -16903474, -16270840, 17238398,
-         4729455, -18074513, 9256800},
-        {-25182317, -4174131, 32336398, 5036987, -21236817, 11360617, 22616405,
-         9761698, -19827198, 630305},
-        {-13720693, 2639453, -24237460, -7406481, 9494427, -5774029, -6554551,
-         -15960994, -2449256, -14291300},
-    },
-    {
-        {-3151181, -5046075, 9282714, 6866145, -31907062, -863023, -18940575,
-         15033784, 25105118, -7894876},
-        {-24326370, 15950226, -31801215, -14592823, -11662737, -5090925,
-         1573892, -2625887, 2198790, -15804619},
-        {-3099351, 10324967, -2241613, 7453183, -5446979, -2735503, -13812022,
-         -16236442, -32461234, -12290683},
-    },
-};
-
 /* base[i][j] = (j+1)*256^i*B */
 constant ge_precomp base[32][8] = {
     {
@@ -3789,93 +3722,6 @@ With tighter constraints on inputs can squeeze carries into int32.
 */
 
 /*
-h = f * 121666
-Can overlap h with f.
-
-Preconditions:
-   |f| bounded by 1.1*2^26,1.1*2^25,1.1*2^26,1.1*2^25,etc.
-
-Postconditions:
-   |h| bounded by 1.1*2^25,1.1*2^24,1.1*2^25,1.1*2^24,etc.
-*/
-
-void fe_mul121666(fe h, fe f) {
-  int32_t f0 = f[0];
-  int32_t f1 = f[1];
-  int32_t f2 = f[2];
-  int32_t f3 = f[3];
-  int32_t f4 = f[4];
-  int32_t f5 = f[5];
-  int32_t f6 = f[6];
-  int32_t f7 = f[7];
-  int32_t f8 = f[8];
-  int32_t f9 = f[9];
-  int64_t h0 = f0 * (int64_t)121666;
-  int64_t h1 = f1 * (int64_t)121666;
-  int64_t h2 = f2 * (int64_t)121666;
-  int64_t h3 = f3 * (int64_t)121666;
-  int64_t h4 = f4 * (int64_t)121666;
-  int64_t h5 = f5 * (int64_t)121666;
-  int64_t h6 = f6 * (int64_t)121666;
-  int64_t h7 = f7 * (int64_t)121666;
-  int64_t h8 = f8 * (int64_t)121666;
-  int64_t h9 = f9 * (int64_t)121666;
-  int64_t carry0;
-  int64_t carry1;
-  int64_t carry2;
-  int64_t carry3;
-  int64_t carry4;
-  int64_t carry5;
-  int64_t carry6;
-  int64_t carry7;
-  int64_t carry8;
-  int64_t carry9;
-
-  carry9 = (h9 + (int64_t)(1 << 24)) >> 25;
-  h0 += carry9 * 19;
-  h9 -= carry9 << 25;
-  carry1 = (h1 + (int64_t)(1 << 24)) >> 25;
-  h2 += carry1;
-  h1 -= carry1 << 25;
-  carry3 = (h3 + (int64_t)(1 << 24)) >> 25;
-  h4 += carry3;
-  h3 -= carry3 << 25;
-  carry5 = (h5 + (int64_t)(1 << 24)) >> 25;
-  h6 += carry5;
-  h5 -= carry5 << 25;
-  carry7 = (h7 + (int64_t)(1 << 24)) >> 25;
-  h8 += carry7;
-  h7 -= carry7 << 25;
-
-  carry0 = (h0 + (int64_t)(1 << 25)) >> 26;
-  h1 += carry0;
-  h0 -= carry0 << 26;
-  carry2 = (h2 + (int64_t)(1 << 25)) >> 26;
-  h3 += carry2;
-  h2 -= carry2 << 26;
-  carry4 = (h4 + (int64_t)(1 << 25)) >> 26;
-  h5 += carry4;
-  h4 -= carry4 << 26;
-  carry6 = (h6 + (int64_t)(1 << 25)) >> 26;
-  h7 += carry6;
-  h6 -= carry6 << 26;
-  carry8 = (h8 + (int64_t)(1 << 25)) >> 26;
-  h9 += carry8;
-  h8 -= carry8 << 26;
-
-  h[0] = (int32_t)h0;
-  h[1] = (int32_t)h1;
-  h[2] = (int32_t)h2;
-  h[3] = (int32_t)h3;
-  h[4] = (int32_t)h4;
-  h[5] = (int32_t)h5;
-  h[6] = (int32_t)h6;
-  h[7] = (int32_t)h7;
-  h[8] = (int32_t)h8;
-  h[9] = (int32_t)h9;
-}
-
-/*
 h = -f
 
 Preconditions:
@@ -3917,91 +3763,6 @@ void fe_neg(__generic fe h, const __generic fe f) {
   h[7] = h7;
   h[8] = h8;
   h[9] = h9;
-}
-
-void fe_pow22523(__generic fe out, const __generic fe z) {
-  fe t0;
-  fe t1;
-  fe t2;
-  int i;
-  fe_sq(t0, z);
-
-  for (i = 1; i < 1; ++i) {
-    fe_sq(t0, t0);
-  }
-
-  fe_sq(t1, t0);
-
-  for (i = 1; i < 2; ++i) {
-    fe_sq(t1, t1);
-  }
-
-  fe_mul(t1, z, t1);
-  fe_mul(t0, t0, t1);
-  fe_sq(t0, t0);
-
-  for (i = 1; i < 1; ++i) {
-    fe_sq(t0, t0);
-  }
-
-  fe_mul(t0, t1, t0);
-  fe_sq(t1, t0);
-
-  for (i = 1; i < 5; ++i) {
-    fe_sq(t1, t1);
-  }
-
-  fe_mul(t0, t1, t0);
-  fe_sq(t1, t0);
-
-  for (i = 1; i < 10; ++i) {
-    fe_sq(t1, t1);
-  }
-
-  fe_mul(t1, t1, t0);
-  fe_sq(t2, t1);
-
-  for (i = 1; i < 20; ++i) {
-    fe_sq(t2, t2);
-  }
-
-  fe_mul(t1, t2, t1);
-  fe_sq(t1, t1);
-
-  for (i = 1; i < 10; ++i) {
-    fe_sq(t1, t1);
-  }
-
-  fe_mul(t0, t1, t0);
-  fe_sq(t1, t0);
-
-  for (i = 1; i < 50; ++i) {
-    fe_sq(t1, t1);
-  }
-
-  fe_mul(t1, t1, t0);
-  fe_sq(t2, t1);
-
-  for (i = 1; i < 100; ++i) {
-    fe_sq(t2, t2);
-  }
-
-  fe_mul(t1, t2, t1);
-  fe_sq(t1, t1);
-
-  for (i = 1; i < 50; ++i) {
-    fe_sq(t1, t1);
-  }
-
-  fe_mul(t0, t1, t0);
-  fe_sq(t0, t0);
-
-  for (i = 1; i < 2; ++i) {
-    fe_sq(t0, t0);
-  }
-
-  fe_mul(out, t0, z);
-  return;
 }
 
 /*
@@ -4192,94 +3953,6 @@ void fe_sq2(__generic fe h, const __generic fe f) {
 }
 
 /*
-h = f - g
-Can overlap h with f or g.
-
-Preconditions:
-   |f| bounded by 1.1*2^25,1.1*2^24,1.1*2^25,1.1*2^24,etc.
-   |g| bounded by 1.1*2^25,1.1*2^24,1.1*2^25,1.1*2^24,etc.
-
-Postconditions:
-   |h| bounded by 1.1*2^26,1.1*2^25,1.1*2^26,1.1*2^25,etc.
-*/
-
-/*
-Preconditions:
-  |h| bounded by 1.1*2^26,1.1*2^25,1.1*2^26,1.1*2^25,etc.
-
-Write p=2^255-19; q=floor(h/p).
-Basic claim: q = floor(2^(-255)(h + 19 2^(-25)h9 + 2^(-1))).
-
-Proof:
-  Have |h|<=p so |q|<=1 so |19^2 2^(-255) q|<1/4.
-  Also have |h-2^230 h9|<2^231 so |19 2^(-255)(h-2^230 h9)|<1/4.
-
-  Write y=2^(-1)-19^2 2^(-255)q-19 2^(-255)(h-2^230 h9).
-  Then 0<y<1.
-
-  Write r=h-pq.
-  Have 0<=r<=p-1=2^255-20.
-  Thus 0<=r+19(2^-255)r<r+19(2^-255)2^255<=2^255-1.
-
-  Write x=r+19(2^-255)r+y.
-  Then 0<x<2^255 so floor(2^(-255)x) = 0 so floor(q+2^(-255)x) = q.
-
-  Have q+2^(-255)x = 2^(-255)(h + 19 2^(-25) h9 + 2^(-1))
-  so floor(2^(-255)(h + 19 2^(-25) h9 + 2^(-1))) = q.
-*/
-
-static void slide(signed char *r, const unsigned char *a) {
-  int i;
-  int b;
-  int k;
-
-  for (i = 0; i < 256; ++i) {
-    r[i] = 1 & (a[i >> 3] >> (i & 7));
-  }
-
-  for (i = 0; i < 256; ++i)
-    if (r[i]) {
-      for (b = 1; b <= 6 && i + b < 256; ++b) {
-        if (r[i + b]) {
-          if (r[i] + (r[i + b] << b) <= 15) {
-            r[i] += r[i + b] << b;
-            r[i + b] = 0;
-          } else if (r[i] - (r[i + b] << b) >= -15) {
-            r[i] -= r[i + b] << b;
-
-            for (k = i + b; k < 256; ++k) {
-              if (!r[k]) {
-                r[k] = 1;
-                break;
-              }
-
-              r[k] = 0;
-            }
-          } else {
-            break;
-          }
-        }
-      }
-    }
-}
-
-/*
-r = a * A + b * B
-where a = a[0]+256*a[1]+...+256^31 a[31].
-and b = b[0]+256*b[1]+...+256^31 b[31].
-B is the Ed25519 base point (x,4/5) with x positive.
-*/
-
-void ge_p3_to_cached(ge_cached *r, const ge_p3 *p) {
-  const fe d2 = {-21827239, -5839606,  -30745221, 13898782, 229458,
-                 15978800,  -12551817, -6495438,  29715968, 9444199};
-  fe_add(r->YplusX, p->Y, p->X);
-  fe_sub(r->YminusX, p->Y, p->X);
-  fe_copy(r->Z, p->Z);
-  fe_mul(r->T2d, p->T, d2);
-}
-
-/*
 r = p
 */
 
@@ -4327,6 +4000,7 @@ void ge_madd(ge_p1p1 *r, const ge_p3 *p, const ge_precomp *q) {
   fe_add(r->Z, t0, r->T);
   fe_sub(r->T, t0, r->T);
 }
+
 void ge_p2_dbl(ge_p1p1 *r, const ge_p2 *p) {
   fe t0;
 
@@ -4367,22 +4041,6 @@ void ge_p2_0(ge_p2 *h) {
   fe_1(h->Z);
 }
 
-void ge_sub(ge_p1p1 *r, const ge_p3 *p, const ge_cached *q) {
-  fe t0;
-
-  fe_add(r->X, p->Y, p->X);
-  fe_sub(r->Y, p->Y, p->X);
-  fe_mul(r->Z, r->X, q->YminusX);
-  fe_mul(r->Y, r->Y, q->YplusX);
-  fe_mul(r->T, q->T2d, p->T);
-  fe_mul(r->X, p->Z, q->Z);
-  fe_add(t0, r->X, r->X);
-  fe_sub(r->X, r->Z, r->Y);
-  fe_add(r->Y, r->Z, r->Y);
-  fe_sub(r->Z, t0, r->T);
-  fe_add(r->T, t0, r->T);
-}
-
 void ge_tobytes(unsigned char *s, const ge_p2 *h) {
   fe recip;
   fe x;
@@ -4394,183 +4052,11 @@ void ge_tobytes(unsigned char *s, const ge_p2 *h) {
   s[31] ^= fe_isnegative(x) << 7;
 }
 
-void ge_msub__constant(ge_p1p1 *r, const ge_p3 *p, constant ge_precomp *q) {
-  fe t0;
-
-  fe_add(r->X, p->Y, p->X);
-  fe_sub(r->Y, p->Y, p->X);
-  fe_mul__contant2(r->Z, r->X, q->yminusx);
-  fe_mul__contant2(r->Y, r->Y, q->yplusx);
-  fe_mul__contant1(r->T, q->xy2d, p->T);
-  fe_add(t0, p->Z, p->Z);
-  fe_sub(r->X, r->Z, r->Y);
-  fe_add(r->Y, r->Z, r->Y);
-  fe_sub(r->Z, t0, r->T);
-  fe_add(r->T, t0, r->T);
-}
-
-void ge_msub(ge_p1p1 *r, const ge_p3 *p, const ge_precomp *q) {
-  fe t0;
-
-  fe_add(r->X, p->Y, p->X);
-  fe_sub(r->Y, p->Y, p->X);
-  fe_mul(r->Z, r->X, q->yminusx);
-  fe_mul(r->Y, r->Y, q->yplusx);
-  fe_mul(r->T, q->xy2d, p->T);
-  fe_add(t0, p->Z, p->Z);
-  fe_sub(r->X, r->Z, r->Y);
-  fe_add(r->Y, r->Z, r->Y);
-  fe_sub(r->Z, t0, r->T);
-  fe_add(r->T, t0, r->T);
-}
-
 void ge_p1p1_to_p2(ge_p2 *r, const ge_p1p1 *p) {
   fe_mul(r->X, p->X, p->T);
   fe_mul(r->Y, p->Y, p->Z);
   fe_mul(r->Z, p->Z, p->T);
 }
-
-void ge_double_scalarmult_vartime(ge_p2 *r, const unsigned char *a,
-                                  const ge_p3 *A, const unsigned char *b) {
-  signed char aslide[256];
-  signed char bslide[256];
-  ge_cached Ai[8]; /* A,3A,5A,7A,9A,11A,13A,15A */
-  ge_p1p1 t;
-  ge_p3 u;
-  ge_p3 A2;
-  int i;
-  slide(aslide, a);
-  slide(bslide, b);
-  ge_p3_to_cached(&Ai[0], A);
-  ge_p3_dbl(&t, A);
-  ge_p1p1_to_p3(&A2, &t);
-  ge_add(&t, &A2, &Ai[0]);
-  ge_p1p1_to_p3(&u, &t);
-  ge_p3_to_cached(&Ai[1], &u);
-  ge_add(&t, &A2, &Ai[1]);
-  ge_p1p1_to_p3(&u, &t);
-  ge_p3_to_cached(&Ai[2], &u);
-  ge_add(&t, &A2, &Ai[2]);
-  ge_p1p1_to_p3(&u, &t);
-  ge_p3_to_cached(&Ai[3], &u);
-  ge_add(&t, &A2, &Ai[3]);
-  ge_p1p1_to_p3(&u, &t);
-  ge_p3_to_cached(&Ai[4], &u);
-  ge_add(&t, &A2, &Ai[4]);
-  ge_p1p1_to_p3(&u, &t);
-  ge_p3_to_cached(&Ai[5], &u);
-  ge_add(&t, &A2, &Ai[5]);
-  ge_p1p1_to_p3(&u, &t);
-  ge_p3_to_cached(&Ai[6], &u);
-  ge_add(&t, &A2, &Ai[6]);
-  ge_p1p1_to_p3(&u, &t);
-  ge_p3_to_cached(&Ai[7], &u);
-  ge_p2_0(r);
-
-  for (i = 255; i >= 0; --i) {
-    if (aslide[i] || bslide[i]) {
-      break;
-    }
-  }
-
-  for (; i >= 0; --i) {
-    ge_p2_dbl(&t, r);
-
-    if (aslide[i] > 0) {
-      ge_p1p1_to_p3(&u, &t);
-      ge_add(&t, &u, &Ai[aslide[i] / 2]);
-    } else if (aslide[i] < 0) {
-      ge_p1p1_to_p3(&u, &t);
-      ge_sub(&t, &u, &Ai[(-aslide[i]) / 2]);
-    }
-
-    if (bslide[i] > 0) {
-      ge_p1p1_to_p3(&u, &t);
-      ge_madd__contant(&t, &u, &Bi[bslide[i] / 2]);
-    } else if (bslide[i] < 0) {
-      ge_p1p1_to_p3(&u, &t);
-      ge_msub__constant(&t, &u, &Bi[(-bslide[i]) / 2]);
-    }
-
-    ge_p1p1_to_p2(r, &t);
-  }
-}
-
-constant fe d = {-10913610, 13857413, -15372611, 6949391,   114729,
-                 -8787816,  -6275908, -3247719,  -18696448, -12055116};
-
-constant fe sqrtm1 = {-32595792, -7943725,  9377950,  3500415, 12389472,
-                      -272473,   -25146209, -2005654, 326686,  11406482};
-
-int ge_frombytes_negate_vartime(ge_p3 *h, const unsigned char *s) {
-  fe u;
-  fe v;
-  fe v3;
-  fe vxx;
-  fe check;
-  fe_frombytes(h->Y, s);
-  fe_1(h->Z);
-  fe_sq(u, h->Y);
-  fe_mul__contant2(v, u, d);
-  fe_sub(u, u, h->Z); /* u = y^2-1 */
-  fe_add(v, v, h->Z); /* v = dy^2+1 */
-  fe_sq(v3, v);
-  fe_mul(v3, v3, v); /* v3 = v^3 */
-  fe_sq(h->X, v3);
-  fe_mul(h->X, h->X, v);
-  fe_mul(h->X, h->X, u);   /* x = uv^7 */
-  fe_pow22523(h->X, h->X); /* x = (uv^7)^((q-5)/8) */
-  fe_mul(h->X, h->X, v3);
-  fe_mul(h->X, h->X, u); /* x = uv^3(uv^7)^((q-5)/8) */
-  fe_sq(vxx, h->X);
-  fe_mul(vxx, vxx, v);
-  fe_sub(check, vxx, u); /* vx^2-u */
-
-  if (fe_isnonzero(check)) {
-    fe_add(check, vxx, u); /* vx^2+u */
-
-    if (fe_isnonzero(check)) {
-      return -1;
-    }
-
-    fe_mul__contant2(h->X, h->X, sqrtm1);
-  }
-
-  if (fe_isnegative(h->X) == (s[31] >> 7)) {
-    fe_neg(h->X, h->X);
-  }
-
-  fe_mul(h->T, h->X, h->Y);
-  return 0;
-}
-
-/*
-r = p + q
-*/
-
-/*
-r = p - q
-*/
-
-/*
-r = p
-*/
-
-/*
-r = p
-*/
-
-/*
-r = 2 * p
-*/
-
-/*
-r = 2 * p
-*/
-
-/*
-r = p
-*/
 
 static unsigned char equal(signed char b, signed char c) {
   unsigned char ub = b;
@@ -4790,191 +4276,92 @@ constant uint64_t K[80] = {
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #endif
 
-/* compress 1024-bits */
-static int sha512_compress(sha512_context *md, unsigned char *buf) {
+int sha512(const unsigned char *message, unsigned char *out) {
+  sha512_context md;
+  md.state[0] = UINT64_C(0x6a09e667f3bcc908);
+  md.state[1] = UINT64_C(0xbb67ae8584caa73b);
+  md.state[2] = UINT64_C(0x3c6ef372fe94f82b);
+  md.state[3] = UINT64_C(0xa54ff53a5f1d36f1);
+  md.state[4] = UINT64_C(0x510e527fade682d1);
+  md.state[5] = UINT64_C(0x9b05688c2b3e6c1f);
+  md.state[6] = UINT64_C(0x1f83d9abfb41bd6b);
+  md.state[7] = UINT64_C(0x5be0cd19137e2179);
+
+  // sha512_update inlined
+  // 
+  // All `if` statements from this function are eliminated if we
+  // will only ever hash a 32 byte seed input. So inlining this
+  // has a drastic speed improvement on GPUs.
+  //
+  // This means:
+  //   * Normally we iterate for each 128 bytes of input, but we are always < 128. So no iteration.
+  //   * We can eliminate a MIN(inlen, (128 - md.curlen)) comparison, specialize to 32, branch prediction improvement.
+  //   * We can eliminate the in/inlen tracking as we will never subtract while under 128
+  //   * As a result, the only thing update does is copy the bytes into the buffer.
+  #pragma unroll
+  for (int i = 0; i < 32; ++i) md.buf[i] = message[i];
+
+  // sha512_final inlined
+  // 
+  // As update was effectively elimiated, the only time we do
+  // sha512_compress now is in the finalize function. We can also
+  // optimize this:
+  //
+  // This means:
+  //   * We don't need to care about the curlen > 112 check. Eliminating a branch.
+  //   * We only need to run one round of sha512_compress, so we can it entirely as we don't need to unroll.
+  md.length = 32 * UINT64_C(8);
+  md.buf[32] = (uchar) 0x80;
+
+  #pragma unroll
+  for (int i = 33; i < 120; i++) md.buf[i] = (uchar) 0;
+  md.curlen = 120;
+
+  STORE64H(md.length, md.buf + 120);
+
+  // Inline sha512_compress
   uint64_t S[8], W[80], t0, t1;
-  int i;
 
-  /* copy state into S */
-  for (i = 0; i < 8; i++) {
-    S[i] = md->state[i];
-  }
+  /* Copy state into S */
+  #pragma unroll
+  for (int i = 0; i < 8; i++) S[i] = md.state[i];
 
-  /* copy the state into 1024-bits into W[0..15] */
-  for (i = 0; i < 16; i++) {
-    LOAD64H(W[i], buf + (8 * i));
-  }
+  /* Copy the state into 1024-bits into W[0..15] */
+  #pragma unroll
+  for (int i = 0; i < 16; i++) LOAD64H(W[i], md.buf + (8*i));
 
-  /* fill W[16..79] */
-  for (i = 16; i < 80; i++) {
-    W[i] = Gamma1(W[i - 2]) + W[i - 7] + Gamma0(W[i - 15]) + W[i - 16];
-  }
+  /* Fill W[16..79] */
+  #pragma unroll
+  for (int i = 16; i < 80; i++) W[i] = Gamma1(W[i - 2]) + W[i - 7] + Gamma0(W[i - 15]) + W[i - 16];
 
   /* Compress */
-#define RND(a, b, c, d, e, f, g, h, i)                                         \
-  t0 = h + Sigma1(e) + Ch(e, f, g) + K[i] + W[i];                              \
-  t1 = Sigma0(a) + Maj(a, b, c);                                               \
-  d += t0;                                                                     \
-  h = t0 + t1;
+  #define RND(a,b,c,d,e,f,g,h,i) \
+  t0 = h + Sigma1(e) + Ch(e, f, g) + K[i] + W[i]; \
+  t1 = Sigma0(a) + Maj(a, b, c);\
+  d += t0; \
+  h  = t0 + t1;
 
-  for (i = 0; i < 80; i += 8) {
-    RND(S[0], S[1], S[2], S[3], S[4], S[5], S[6], S[7], i + 0);
-    RND(S[7], S[0], S[1], S[2], S[3], S[4], S[5], S[6], i + 1);
-    RND(S[6], S[7], S[0], S[1], S[2], S[3], S[4], S[5], i + 2);
-    RND(S[5], S[6], S[7], S[0], S[1], S[2], S[3], S[4], i + 3);
-    RND(S[4], S[5], S[6], S[7], S[0], S[1], S[2], S[3], i + 4);
-    RND(S[3], S[4], S[5], S[6], S[7], S[0], S[1], S[2], i + 5);
-    RND(S[2], S[3], S[4], S[5], S[6], S[7], S[0], S[1], i + 6);
-    RND(S[1], S[2], S[3], S[4], S[5], S[6], S[7], S[0], i + 7);
+  #pragma unroll
+  for (int i = 0; i < 80; i += 8) {
+      RND(S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],i+0);
+      RND(S[7],S[0],S[1],S[2],S[3],S[4],S[5],S[6],i+1);
+      RND(S[6],S[7],S[0],S[1],S[2],S[3],S[4],S[5],i+2);
+      RND(S[5],S[6],S[7],S[0],S[1],S[2],S[3],S[4],i+3);
+      RND(S[4],S[5],S[6],S[7],S[0],S[1],S[2],S[3],i+4);
+      RND(S[3],S[4],S[5],S[6],S[7],S[0],S[1],S[2],i+5);
+      RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],i+6);
+      RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],i+7);
   }
 
-#undef RND
+  #undef RND
 
-  /* feedback */
-  for (i = 0; i < 8; i++) {
-    md->state[i] = md->state[i] + S[i];
-  }
+  /* Feedback */
+  #pragma unroll
+  for (int i = 0; i < 8; i++) md.state[i] = md.state[i] + S[i];
 
-  return 0;
-}
-
-/**
-   Initialize the hash state
-   @param md   The hash state you wish to initialize
-   @return 0 if successful
-*/
-int sha512_init(sha512_context *md) {
-  if (md == NULL)
-    return 1;
-
-  md->curlen = 0;
-  md->length = 0;
-  md->state[0] = UINT64_C(0x6a09e667f3bcc908);
-  md->state[1] = UINT64_C(0xbb67ae8584caa73b);
-  md->state[2] = UINT64_C(0x3c6ef372fe94f82b);
-  md->state[3] = UINT64_C(0xa54ff53a5f1d36f1);
-  md->state[4] = UINT64_C(0x510e527fade682d1);
-  md->state[5] = UINT64_C(0x9b05688c2b3e6c1f);
-  md->state[6] = UINT64_C(0x1f83d9abfb41bd6b);
-  md->state[7] = UINT64_C(0x5be0cd19137e2179);
-
-  return 0;
-}
-
-/**
-   Process a block of memory though the hash
-   @param md     The hash state
-   @param in     The data to hash
-   @param inlen  The length of the data (octets)
-   @return 0 if successful
-*/
-int sha512_update(sha512_context *md, const unsigned char *in, size_t inlen) {
-  size_t n;
-  size_t i;
-  int err;
-  if (md == NULL)
-    return 1;
-  if (in == NULL)
-    return 1;
-  if (md->curlen > sizeof(md->buf)) {
-    return 1;
-  }
-  while (inlen > 0) {
-    if (md->curlen == 0 && inlen >= 128) {
-      if ((err = sha512_compress(md, (unsigned char *)in)) != 0) {
-        return err;
-      }
-      md->length += 128 * 8;
-      in += 128;
-      inlen -= 128;
-    } else {
-      n = MIN(inlen, (128 - md->curlen));
-
-      for (i = 0; i < n; i++) {
-        md->buf[i + md->curlen] = in[i];
-      }
-
-      md->curlen += n;
-      in += n;
-      inlen -= n;
-      if (md->curlen == 128) {
-        if ((err = sha512_compress(md, md->buf)) != 0) {
-          return err;
-        }
-        md->length += 8 * 128;
-        md->curlen = 0;
-      }
-    }
-  }
-  return 0;
-}
-
-/**
-   Terminate the hash to get the digest
-   @param md  The hash state
-   @param out [out] The destination of the hash (64 bytes)
-   @return 0 if successful
-*/
-int sha512_final(sha512_context *md, unsigned char *out) {
-  int i;
-
-  if (md == NULL)
-    return 1;
-  if (out == NULL)
-    return 1;
-
-  if (md->curlen >= sizeof(md->buf)) {
-    return 1;
-  }
-
-  /* increase the length of the message */
-  md->length += md->curlen * UINT64_C(8);
-
-  /* append the '1' bit */
-  md->buf[md->curlen++] = (unsigned char)0x80;
-
-  /* if the length is currently above 112 bytes we append zeros
-   * then compress.  Then we can fall back to padding zeros and length
-   * encoding like normal.
-   */
-  if (md->curlen > 112) {
-    while (md->curlen < 128) {
-      md->buf[md->curlen++] = (unsigned char)0;
-    }
-    sha512_compress(md, md->buf);
-    md->curlen = 0;
-  }
-
-  /* pad upto 120 bytes of zeroes
-   * note: that from 112 to 120 is the 64 MSB of the length.  We assume that you
-   * won't hash > 2^64 bits of data... :-)
-   */
-  while (md->curlen < 120) {
-    md->buf[md->curlen++] = (unsigned char)0;
-  }
-
-  /* store length */
-  STORE64H(md->length, md->buf + 120);
-  sha512_compress(md, md->buf);
-
-  /* copy output */
-  for (i = 0; i < 8; i++) {
-    STORE64H(md->state[i], out + (8 * i));
-  }
-
-  return 0;
-}
-
-int sha512(const unsigned char *message, size_t message_len,
-           unsigned char *out) {
-  sha512_context ctx;
-  int ret;
-  if ((ret = sha512_init(&ctx)))
-    return ret;
-  if ((ret = sha512_update(&ctx, message, message_len)))
-    return ret;
-  if ((ret = sha512_final(&ctx, out)))
-    return ret;
+  // We can now output our finalized bytes into the output buffer.
+  #pragma unroll
+  for (int i = 0; i < 8; i++) STORE64H(md.state[i], out+(8*i));
   return 0;
 }
 
@@ -4983,7 +4370,7 @@ void ed25519_create_keypair(unsigned char *public_key,
                             const unsigned char *seed) {
   ge_p3 A;
 
-  sha512(seed, 32, private_key);
+  sha512(seed, private_key);
   private_key[0] &= 248;
   private_key[31] &= 63;
   private_key[31] |= 64;
@@ -4995,97 +4382,167 @@ void ed25519_create_keypair(unsigned char *public_key,
 constant uchar alphabet[] =
     "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
-static uchar *base58_encode(uchar *in, size_t *out_len) {
-  size_t in_len = 32, out_length;
-  uchar addr[44];
-  uchar *out = &addr[0];
-  *out_len = out_length;
-
-  // leading zeroes
-  size_t total = 0;
-  for (size_t i = 0; i < in_len && !in[i]; ++i) {
-    out[total++] = alphabet[0];
+static void base58_encode(uchar *in, size_t *out_len, uchar *out) {
+  unsigned int binary[8];
+  uint64_t intermediate[9];
+  
+  #define REV_ENDIAN(a, i) ( \
+  (((unsigned int) a[i * 4 + 0]) << 24) | \
+  (((unsigned int) a[i * 4 + 1]) << 16) | \
+  (((unsigned int) a[i * 4 + 2]) << 8) | \
+  (((unsigned int) a[i * 4 + 3])) )
+  
+  #define INIT_BINARY(i) binary[i] = REV_ENDIAN(in, i);
+  
+  INIT_BINARY(0)
+  INIT_BINARY(1)
+  INIT_BINARY(2)
+  INIT_BINARY(3)
+  INIT_BINARY(4)
+  INIT_BINARY(5)
+  INIT_BINARY(6)
+  INIT_BINARY(7)
+  
+  unsigned int in_leading_0s = (clz(binary[0]) + (binary[0] == 0) * clz(binary[1])) >> 3;
+  if (in_leading_0s == 8) {
+    for (; in_leading_0s < 32; in_leading_0s++) if (in[in_leading_0s]) break;   
   }
-  in += total;
-  in_len -= total;
-  out += total;
-  size_t zero_length = total;
-
-  // encoding
-  size_t idx = 0;
-  for (size_t i = 0; i < in_len; ++i) {
-    unsigned int carry = in[i];
-    for (size_t j = 0; j < idx; ++j) {
-      carry += (unsigned int)out[j] << 8;
-      out[j] = (carry % 58);
-      carry /= 58;
-    }
-    while (carry > 0) {
-      total++;
-      out[idx++] = (carry % 58);
-      carry /= 58;
-    }
+  
+  intermediate[0] = 0;
+  intermediate[1] = 0;
+  intermediate[2] = 0;
+  intermediate[3] = 0;
+  intermediate[4] = 0;
+  intermediate[5] = 0;
+  intermediate[6] = 0;
+  intermediate[7] = 0;
+  intermediate[8] = 0;
+  
+  intermediate[1] += (uint64_t) binary[0] * (uint64_t) 513735UL;
+  intermediate[2] += (uint64_t) binary[0] * (uint64_t) 77223048UL;
+  intermediate[3] += (uint64_t) binary[0] * (uint64_t) 437087610UL;
+  intermediate[4] += (uint64_t) binary[0] * (uint64_t) 300156666UL;
+  intermediate[5] += (uint64_t) binary[0] * (uint64_t) 605448490UL;
+  intermediate[6] += (uint64_t) binary[0] * (uint64_t) 214625350UL;
+  intermediate[7] += (uint64_t) binary[0] * (uint64_t) 141436834UL;
+  intermediate[8] += (uint64_t) binary[0] * (uint64_t) 379377856UL;
+  intermediate[2] += (uint64_t) binary[1] * (uint64_t) 78508UL;
+  intermediate[3] += (uint64_t) binary[1] * (uint64_t) 646269101UL;
+  intermediate[4] += (uint64_t) binary[1] * (uint64_t) 118408823UL;
+  intermediate[5] += (uint64_t) binary[1] * (uint64_t) 91512303UL;
+  intermediate[6] += (uint64_t) binary[1] * (uint64_t) 209184527UL;
+  intermediate[7] += (uint64_t) binary[1] * (uint64_t) 413102373UL;
+  intermediate[8] += (uint64_t) binary[1] * (uint64_t) 153715680UL;
+  intermediate[3] += (uint64_t) binary[2] * (uint64_t) 11997UL;
+  intermediate[4] += (uint64_t) binary[2] * (uint64_t) 486083817UL;
+  intermediate[5] += (uint64_t) binary[2] * (uint64_t) 3737691UL;
+  intermediate[6] += (uint64_t) binary[2] * (uint64_t) 294005210UL;
+  intermediate[7] += (uint64_t) binary[2] * (uint64_t) 247894721UL;
+  intermediate[8] += (uint64_t) binary[2] * (uint64_t) 289024608UL;
+  intermediate[4] += (uint64_t) binary[3] * (uint64_t) 1833UL;
+  intermediate[5] += (uint64_t) binary[3] * (uint64_t) 324463681UL;
+  intermediate[6] += (uint64_t) binary[3] * (uint64_t) 385795061UL;
+  intermediate[7] += (uint64_t) binary[3] * (uint64_t) 551597588UL;
+  intermediate[8] += (uint64_t) binary[3] * (uint64_t) 21339008UL;
+  intermediate[5] += (uint64_t) binary[4] * (uint64_t) 280UL;
+  intermediate[6] += (uint64_t) binary[4] * (uint64_t) 127692781UL;
+  intermediate[7] += (uint64_t) binary[4] * (uint64_t) 389432875UL;
+  intermediate[8] += (uint64_t) binary[4] * (uint64_t) 357132832UL;
+  intermediate[6] += (uint64_t) binary[5] * (uint64_t) 42UL;
+  intermediate[7] += (uint64_t) binary[5] * (uint64_t) 537767569UL;
+  intermediate[8] += (uint64_t) binary[5] * (uint64_t) 410450016UL;
+  intermediate[7] += (uint64_t) binary[6] * (uint64_t) 6UL;
+  intermediate[8] += (uint64_t) binary[6] * (uint64_t) 356826688UL;
+  intermediate[8] += (uint64_t) binary[7] * (uint64_t) 1UL;
+  
+  intermediate[7] += intermediate[8] / 656356768UL;
+  intermediate[8] %= 656356768UL;
+  intermediate[6] += intermediate[7] / 656356768UL;
+  intermediate[7] %= 656356768UL;
+  intermediate[5] += intermediate[6] / 656356768UL;
+  intermediate[6] %= 656356768UL;
+  intermediate[4] += intermediate[5] / 656356768UL;
+  intermediate[5] %= 656356768UL;
+  intermediate[3] += intermediate[4] / 656356768UL;
+  intermediate[4] %= 656356768UL;
+  intermediate[2] += intermediate[3] / 656356768UL;
+  intermediate[3] %= 656356768UL;
+  intermediate[1] += intermediate[2] / 656356768UL;
+  intermediate[2] %= 656356768UL;
+  intermediate[0] += intermediate[1] / 656356768UL;
+  intermediate[1] %= 656356768UL;
+  
+  #define DO_FINAL(i) \
+  out[5 * i + 4] = ((((unsigned int) intermediate[i]) / 1U       ) % 58U); \
+  out[5 * i + 3] = ((((unsigned int) intermediate[i]) / 58U      ) % 58U); \
+  out[5 * i + 2] = ((((unsigned int) intermediate[i]) / 3364U    ) % 58U); \
+  out[5 * i + 1] = ((((unsigned int) intermediate[i]) / 195112U  ) % 58U); \
+  out[5 * i + 0] = ( ((unsigned int) intermediate[i]) / 11316496U);
+  
+  DO_FINAL(0)
+  DO_FINAL(1)
+  DO_FINAL(2)
+  DO_FINAL(3)
+  DO_FINAL(4)
+  DO_FINAL(5)
+  DO_FINAL(6)
+  DO_FINAL(7)
+  DO_FINAL(8)
+  
+  unsigned int t = REV_ENDIAN(out, 0);
+  unsigned int raw_leading_0s = (clz(t) + (t == 0) * clz(REV_ENDIAN(out, 1))) >> 3;
+  if (raw_leading_0s == 8) {
+    for (; raw_leading_0s < 45; raw_leading_0s++) if (out[raw_leading_0s]) break;
   }
-
-  // apply alphabet and reverse
-  size_t c_idx = idx >> 1;
-  for (size_t i = 0; i < c_idx; ++i) {
-    uchar s = alphabet[(uchar)out[i]];
-    out[i] = alphabet[(uchar)out[idx - (i + 1)]];
-    out[idx - (i + 1)] = s;
-  }
-  if ((idx & 1)) {
-    out[c_idx] = alphabet[(uchar)out[c_idx]];
-  }
-  *out_len = total;
-  if (zero_length) {
-    out -= zero_length;
-  }
-  return out;
+  
+  unsigned int skip = (raw_leading_0s - in_leading_0s) * (raw_leading_0s > in_leading_0s);
+  #pragma unroll
+  for (int i = 0; i < 45; i++) out[i] = alphabet[out[(skip + i) * ((skip + i) < 45)]];
+  *out_len = (9 * 5) - skip;
 }
 
-__kernel void generate_pubkey(constant uchar *seed, global uchar *out,
-                              global uchar *occupied_bytes,
-                              global uchar *group_offset) {
+__kernel void generate_pubkey(constant uchar *seed, global uchar *out, global uchar *group_offset) {
   uchar public_key[32], private_key[64];
   uchar key_base[32];
+  #pragma unroll
   for (size_t i = 0; i < 32; i++) {
     key_base[i] = seed[i];
   }
-  const global_id = (*group_offset) * get_global_size(0) + get_global_id(0);
+  const int global_id = (*group_offset) * get_global_size(0) + get_global_id(0);
 
   // reset last occupied bytes
-  for (size_t i = 0; i < *occupied_bytes; i++) {
+  #pragma unroll
+  for (size_t i = 0; i < OCCUPIED_BYTES; i++) {
     key_base[31 - i] += ((global_id >> (i * 8)) & 0xFF);
   }
 
   ed25519_create_keypair(public_key, private_key, key_base);
   size_t length;
-  uchar *addr = base58_encode(public_key, &length);
+  uchar addr[45];
+  base58_encode(public_key, &length, addr);
 
-  // pattern match
-  size_t prefix_len = sizeof(PREFIX), suffix_len = sizeof(SUFFIX);
-  for (size_t i = 0; i < suffix_len; i++) {
-    if (addr[length - suffix_len + i] != SUFFIX[i])
-      return;
+  int any_mismatch = 0;
+  #pragma unroll
+  for (size_t i = 0; i < sizeof(SUFFIX); i++) {
+    any_mismatch |= addr[length - sizeof(SUFFIX) + i] != SUFFIX[i];
   }
-
-  for (size_t i = 0; i < prefix_len; i++) {
-    if (addr[i] != PREFIX[i])
-      return;
+  #pragma unroll
+  for (size_t i = 0; i < sizeof(PREFIX); i++) {
+    any_mismatch |= addr[i] != PREFIX[i];
   }
-
-  // assign to out
-  if (out[0] == 0) {
-    out[0] = length;
-    for (size_t j = 0; j < 32; j++) {
-      out[j + 1] = key_base[j];
+  if (!any_mismatch) {
+    // assign to out
+    if (out[0] == 0) {
+      out[0] = length;
+      for (size_t j = 0; j < 32; j++) {
+        out[j + 1] = key_base[j];
+      }
     }
-  }
-  if (length < out[0]) {
-    out[0] = length;
-    for (size_t j = 0; j < 32; j++) {
-      out[j + 1] = key_base[j];
-    }
+    if (length < out[0]) {
+      out[0] = length;
+      for (size_t j = 0; j < 32; j++) {
+        out[j + 1] = key_base[j];
+      }
+    }  
   }
 }

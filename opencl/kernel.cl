@@ -9,6 +9,25 @@ typedef long int64_t;
 
 typedef int32_t fe[10];
 
+constant uchar alphabet_indices[] = {
+  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 1, 2, 3, 4, 5, 6,
+  7, 8, 0, 0, 0, 0, 0, 0,
+  0, 9, 10, 11, 12, 13, 14, 15,
+  16, 0, 17, 18, 19, 20, 21, 0,
+  22, 23, 24, 25, 26, 27, 28, 29,
+  30, 31, 32, 0, 0, 0, 0, 0,
+  0, 33, 34, 35, 36, 37, 38, 39,
+  40, 41, 42, 43, 0, 44, 45, 46,
+  47, 48, 49, 50, 51, 52, 53, 54,
+  55, 56, 57, 0, 0, 0, 0, 0
+};
+
 constant uchar PREFIX[] = {83, 111, 76};
 constant uchar SUFFIX[] = {};
 
@@ -2881,77 +2900,6 @@ void fe_sq(__generic fe h, const __generic fe f) {
 }
 
 /*
-    Replace (f,g) with (g,f) if b == 1;
-    replace (f,g) with (f,g) if b == 0.
-
-    Preconditions: b in {0,1}.
-*/
-
-void fe_cswap(fe f, fe g, unsigned int b) {
-  int32_t f0 = f[0];
-  int32_t f1 = f[1];
-  int32_t f2 = f[2];
-  int32_t f3 = f[3];
-  int32_t f4 = f[4];
-  int32_t f5 = f[5];
-  int32_t f6 = f[6];
-  int32_t f7 = f[7];
-  int32_t f8 = f[8];
-  int32_t f9 = f[9];
-  int32_t g0 = g[0];
-  int32_t g1 = g[1];
-  int32_t g2 = g[2];
-  int32_t g3 = g[3];
-  int32_t g4 = g[4];
-  int32_t g5 = g[5];
-  int32_t g6 = g[6];
-  int32_t g7 = g[7];
-  int32_t g8 = g[8];
-  int32_t g9 = g[9];
-  int32_t x0 = f0 ^ g0;
-  int32_t x1 = f1 ^ g1;
-  int32_t x2 = f2 ^ g2;
-  int32_t x3 = f3 ^ g3;
-  int32_t x4 = f4 ^ g4;
-  int32_t x5 = f5 ^ g5;
-  int32_t x6 = f6 ^ g6;
-  int32_t x7 = f7 ^ g7;
-  int32_t x8 = f8 ^ g8;
-  int32_t x9 = f9 ^ g9;
-  b = (unsigned int)(-(int)b); /* silence warning */
-  x0 &= b;
-  x1 &= b;
-  x2 &= b;
-  x3 &= b;
-  x4 &= b;
-  x5 &= b;
-  x6 &= b;
-  x7 &= b;
-  x8 &= b;
-  x9 &= b;
-  f[0] = f0 ^ x0;
-  f[1] = f1 ^ x1;
-  f[2] = f2 ^ x2;
-  f[3] = f3 ^ x3;
-  f[4] = f4 ^ x4;
-  f[5] = f5 ^ x5;
-  f[6] = f6 ^ x6;
-  f[7] = f7 ^ x7;
-  f[8] = f8 ^ x8;
-  f[9] = f9 ^ x9;
-  g[0] = g0 ^ x0;
-  g[1] = g1 ^ x1;
-  g[2] = g2 ^ x2;
-  g[3] = g3 ^ x3;
-  g[4] = g4 ^ x4;
-  g[5] = g5 ^ x5;
-  g[6] = g6 ^ x6;
-  g[7] = g7 ^ x7;
-  g[8] = g8 ^ x8;
-  g[9] = g9 ^ x9;
-}
-
-/*
     h = f
 */
 
@@ -3790,44 +3738,20 @@ void ed25519_create_keypair(unsigned char *public_key,
   ge_p3_tobytes(public_key, &A);
 }
 
-constant uchar alphabet[] =
-    "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-
-static void base58_encode(uchar *in, size_t *out_len, uchar *out) {
+static uchar * base58_encode(uchar *in, size_t *out_len, uchar *out) {
   unsigned int binary[8];
-  uint64_t intermediate[9];
 
-  #define REV_ENDIAN(a, i) ( \
-  (((unsigned int) a[i * 4 + 0]) << 24) | \
-  (((unsigned int) a[i * 4 + 1]) << 16) | \
-  (((unsigned int) a[i * 4 + 2]) << 8) | \
-  (((unsigned int) a[i * 4 + 3])) )
-
-  #define INIT_BINARY(i) binary[i] = REV_ENDIAN(in, i);
-
-  INIT_BINARY(0)
-  INIT_BINARY(1)
-  INIT_BINARY(2)
-  INIT_BINARY(3)
-  INIT_BINARY(4)
-  INIT_BINARY(5)
-  INIT_BINARY(6)
-  INIT_BINARY(7)
+  #pragma unroll
+  for (int i = 0; i < 8; ++i) {
+    binary[i] = as_uint(((uchar4*)in)[i].wzyx);
+  }
 
   unsigned int in_leading_0s = (clz(binary[0]) + (binary[0] == 0) * clz(binary[1])) >> 3;
   if (in_leading_0s == 8) {
     for (; in_leading_0s < 32; in_leading_0s++) if (in[in_leading_0s]) break;
   }
 
-  intermediate[0] = 0;
-  intermediate[1] = 0;
-  intermediate[2] = 0;
-  intermediate[3] = 0;
-  intermediate[4] = 0;
-  intermediate[5] = 0;
-  intermediate[6] = 0;
-  intermediate[7] = 0;
-  intermediate[8] = 0;
+  uint64_t intermediate[9] = {0};
 
   intermediate[1] += (uint64_t) binary[0] * (uint64_t) 513735UL;
   intermediate[2] += (uint64_t) binary[0] * (uint64_t) 77223048UL;
@@ -3883,39 +3807,31 @@ static void base58_encode(uchar *in, size_t *out_len, uchar *out) {
   intermediate[0] += intermediate[1] / 656356768UL;
   intermediate[1] %= 656356768UL;
 
-  #define DO_FINAL(i) \
-  out[5 * i + 4] = ((((unsigned int) intermediate[i]) / 1U       ) % 58U); \
-  out[5 * i + 3] = ((((unsigned int) intermediate[i]) / 58U      ) % 58U); \
-  out[5 * i + 2] = ((((unsigned int) intermediate[i]) / 3364U    ) % 58U); \
-  out[5 * i + 1] = ((((unsigned int) intermediate[i]) / 195112U  ) % 58U); \
-  out[5 * i + 0] = ( ((unsigned int) intermediate[i]) / 11316496U);
+  #pragma unroll
+  for (int i = 0; i < 9; i++) {
+    out[5 * i + 4] = ((((unsigned int) intermediate[i]) / 1U       ) % 58U); \
+    out[5 * i + 3] = ((((unsigned int) intermediate[i]) / 58U      ) % 58U); \
+    out[5 * i + 2] = ((((unsigned int) intermediate[i]) / 3364U    ) % 58U); \
+    out[5 * i + 1] = ((((unsigned int) intermediate[i]) / 195112U  ) % 58U); \
+    out[5 * i + 0] = ( ((unsigned int) intermediate[i]) / 11316496U);
+  }
 
-  DO_FINAL(0)
-  DO_FINAL(1)
-  DO_FINAL(2)
-  DO_FINAL(3)
-  DO_FINAL(4)
-  DO_FINAL(5)
-  DO_FINAL(6)
-  DO_FINAL(7)
-  DO_FINAL(8)
-
-  unsigned int t = REV_ENDIAN(out, 0);
-  unsigned int raw_leading_0s = (clz(t) + (t == 0) * clz(REV_ENDIAN(out, 1))) >> 3;
+  unsigned int t = as_uint(((uchar4 *)out)[0].wzyx);
+  unsigned int raw_leading_0s = (clz(t) + (t == 0) * clz(as_uint(((uchar4 *)out)[1].wzyx))) >> 3;
   if (raw_leading_0s == 8) {
     for (; raw_leading_0s < 45; raw_leading_0s++) if (out[raw_leading_0s]) break;
   }
 
   unsigned int skip = (raw_leading_0s - in_leading_0s) * (raw_leading_0s > in_leading_0s);
-  #pragma unroll
-  for (int i = 0; i < 45; i++) out[i] = alphabet[out[(skip + i) * ((skip + i) < 45)]];
   *out_len = (9 * 5) - skip;
+  return out + skip;
 }
 
 __kernel void generate_pubkey(constant uchar *seed, global uchar *out,
                               global uchar *occupied_bytes,
                               global uchar *group_offset) {
-  uchar public_key[32], private_key[64];
+  uchar public_key[32] __attribute__((aligned(32)));
+  uchar private_key[64];
   uchar key_base[32];
   #pragma unroll
   for (size_t i = 0; i < 32; i++) {
@@ -3930,17 +3846,17 @@ __kernel void generate_pubkey(constant uchar *seed, global uchar *out,
 
   ed25519_create_keypair(public_key, private_key, key_base);
   size_t length;
-  uchar addr[45];
-  base58_encode(public_key, &length, addr);
+  uchar addr_buffer[45] __attribute__((aligned(32)));
+  uchar *addr_raw = base58_encode(public_key, &length, addr_buffer);
 
   int any_mismatch = 0;
   #pragma unroll
   for (size_t i = 0; i < sizeof(SUFFIX); i++) {
-    any_mismatch |= addr[length - sizeof(SUFFIX) + i] != SUFFIX[i];
+    any_mismatch |= addr_raw[length - sizeof(SUFFIX) + i] ^ alphabet_indices[SUFFIX[i]];
   }
   #pragma unroll
   for (size_t i = 0; i < sizeof(PREFIX); i++) {
-    any_mismatch |= addr[i] != PREFIX[i];
+    any_mismatch |= addr_raw[i] ^ alphabet_indices[PREFIX[i]];
   }
   if (!any_mismatch) {
     // assign to out

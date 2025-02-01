@@ -46,7 +46,7 @@ class HostSetting:
         next_number = current_number + (1 << self.iteration_bits)
         _number_bytes = next_number.to_bytes(32, "big")
         new_key32 = np.array([x for x in _number_bytes], dtype=np.ubyte)
-        carry_index = 0 - self.iteration_bytes
+        carry_index = 0 - int(self.iteration_bytes) # for uint8 underflow on windows platform
         if (new_key32[carry_index] < self.key32[carry_index]) and new_key32[
             carry_index
         ] != 0:

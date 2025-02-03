@@ -8,7 +8,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from math import ceil
 from multiprocessing.pool import Pool
-
+import multiprocessing
 import pyopencl as cl
 
 os.environ["PYOPENCL_COMPILER_OUTPUT"] = "1"
@@ -109,10 +109,19 @@ def single_gpu_init(context, setting):
         setting=setting,
         context=context,
     )
-    return [searcher.find()]
+    i = 0
+    st = time.time()
+    while True:
+        result = searcher.find(i == 0)
+        if result[0]:
+            return [result]
+        if time.time() - st > 1:
+            i = 0
+            st = time.time()
+        else:
+            i += 1
 
-
-def multi_gpu_init(index: int, setting: HostSetting):
+def multi_gpu_init(index: int, setting: HostSetting, gpu_counts, stop_flag, lock):
     # get all platforms and devices
     try:
         searcher = Searcher(
@@ -120,8 +129,23 @@ def multi_gpu_init(index: int, setting: HostSetting):
             index=index,
             setting=setting,
         )
-
-        return searcher.find()
+        i = 0
+        st = time.time()
+        while True:
+            result = searcher.find(i == 0)
+            if result[0]:
+                with lock:
+                    if not stop_flag.value:
+                        stop_flag.value = 1
+                return result
+            if time.time() - st > max(gpu_counts, 1):
+                i = 0
+                st = time.time()
+                with lock:
+                    if stop_flag.value:
+                        return result
+            else:
+                i += 1
     except Exception as e:
         logging.exception(e)
     return [0]
@@ -170,6 +194,32 @@ class Searcher:
         self.program = program
         self.kernel = cl.Kernel(program, "generate_pubkey")
 
+        self.memobj_key32 = cl.Buffer(
+            self.context,
+            cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR,
+            32 * np.ubyte().itemsize,
+            hostbuf=self.setting.key32,
+        )
+        self.memobj_output = cl.Buffer(
+            self.context, cl.mem_flags.READ_WRITE, 33 * np.ubyte().itemsize
+        )
+
+        self.memobj_occupied_bytes = cl.Buffer(
+            self.context,
+            cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR,
+            hostbuf=np.array([self.setting.iteration_bytes]),
+        )
+        self.memobj_group_offset = cl.Buffer(
+            self.context,
+            cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR,
+            hostbuf=np.array([self.index]),
+        )
+        self.output = np.zeros(33, dtype=np.ubyte)
+        self.kernel.set_arg(0, self.memobj_key32)
+        self.kernel.set_arg(1, self.memobj_output)
+        self.kernel.set_arg(2, self.memobj_occupied_bytes)
+        self.kernel.set_arg(3, self.memobj_group_offset)
+
     def filter_valid_result(self, outputs):
         valid_outputs = []
         for output in outputs:
@@ -178,34 +228,11 @@ class Searcher:
             valid_outputs.append(output)
         return valid_outputs
 
-    def find(self):
-        memobj_key32 = cl.Buffer(
-            self.context,
-            cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR,
-            32 * np.ubyte().itemsize,
-            hostbuf=self.setting.key32,
-        )
-        memobj_output = cl.Buffer(
-            self.context, cl.mem_flags.READ_WRITE, 33 * np.ubyte().itemsize
-        )
+    def find(self, log_stats=True):
+        cl.enqueue_copy(self.command_queue, self.memobj_key32, self.setting.key32)
+        self.setting.increase_key32()
 
-        memobj_occupied_bytes = cl.Buffer(
-            self.context,
-            cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR,
-            hostbuf=np.array([self.setting.iteration_bytes]),
-        )
-        memobj_group_offset = cl.Buffer(
-            self.context,
-            cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR,
-            hostbuf=np.array([self.index]),
-        )
-        output = np.zeros(33, dtype=np.ubyte)
-        self.kernel.set_arg(0, memobj_key32)
-        self.kernel.set_arg(1, memobj_output)
-        self.kernel.set_arg(2, memobj_occupied_bytes)
-        self.kernel.set_arg(3, memobj_group_offset)
-
-        st = time.time()
+        st = time.time() if log_stats else 0
         global_worker_size = self.setting.global_work_size // self.gpu_chunks
         cl.enqueue_nd_range_kernel(
             self.command_queue,
@@ -213,12 +240,13 @@ class Searcher:
             (global_worker_size,),
             (self.setting.local_work_size,),
         )
-        cl._enqueue_read_buffer(self.command_queue, memobj_output, output).wait()
-        logging.info(
-            f"GPU {self.index} Speed: {global_worker_size/ ((time.time() - st) * 10**6):.2f} MH/s"
-        )
+        cl._enqueue_read_buffer(self.command_queue, self.memobj_output, self.output).wait()
+        if log_stats:
+            logging.info(
+                f"GPU {self.index} Speed: {global_worker_size/ ((time.time() - st) * 10**6):.2f} MH/s"
+            )
 
-        return output
+        return self.output
 
 
 @click.group()
@@ -289,30 +317,33 @@ def search_pubkey(
     with Pool() as pool:
         gpu_counts = len(pool.apply(get_all_gpu_devices))
 
-    kernel_source = get_kernel_source(starts_with, ends_with, cl)
-    setting = HostSetting(kernel_source, iteration_bits)
     result_count = 0
 
     logging.info(f"Searching with {gpu_counts} OpenCL devices")
     if select_device:
         with ThreadPoolExecutor(max_workers=1) as executor:
             context = cl.create_some_context()
+            kernel_source = get_kernel_source(starts_with, ends_with, cl)
             while result_count < count:
+                setting = HostSetting(kernel_source, iteration_bits)
                 future = executor.submit(single_gpu_init, context, setting)
                 result = future.result()
                 result_count += save_result(result, output_dir)
-                setting.increase_key32()
-                time.sleep(0.1)
         return
 
-    with Pool(processes=gpu_counts) as pool:
-        while result_count < count:
-            results = pool.starmap(
-                multi_gpu_init, [(x, setting) for x in range(gpu_counts)]
-            )
-            result_count += save_result(results, output_dir)
-            setting.increase_key32()
-            time.sleep(0.1)
+    with multiprocessing.Manager() as manager:
+        with Pool(processes=gpu_counts) as pool:
+            kernel_source = get_kernel_source(starts_with, ends_with, cl)
+            lock = manager.Lock()
+            while result_count < count:
+                stop_flag = manager.Value("i", 0)
+                results = pool.starmap(
+                    multi_gpu_init, [
+                        (x, HostSetting(kernel_source, iteration_bits), gpu_counts, stop_flag, lock)
+                        for x in range(gpu_counts)
+                    ]
+                )
+                result_count += save_result(results, output_dir)
 
 
 @cli.command(context_settings={"show_default": True})

@@ -64,6 +64,7 @@ typedef struct __attribute__((aligned(32))) {
     h = 0
 */
 
+inline __attribute__((always_inline))
 void fe_0(__generic fe h) {
   h[0] = 0;
   h[1] = 0;
@@ -2193,6 +2194,7 @@ constant ge_precomp base[32][8] = {
     },
 };
 
+inline __attribute__((always_inline))
 void fe_mul(__generic fe h, const __generic fe f, const __generic fe g) {
   int32_t f0 = f[0];
   int32_t f1 = f[1];
@@ -2414,6 +2416,7 @@ void fe_mul(__generic fe h, const __generic fe f, const __generic fe g) {
   h[9] = (int32_t)h9;
 }
 
+inline __attribute__((always_inline))
 void fe_sub(__generic fe h, const __generic fe f, const __generic fe g) {
   int32_t f0 = f[0];
   int32_t f1 = f[1];
@@ -2458,6 +2461,7 @@ void fe_sub(__generic fe h, const __generic fe f, const __generic fe g) {
   h[9] = h9;
 }
 
+inline __attribute__((always_inline))
 void fe_add(__generic fe h, const __generic fe f, const __generic fe g) {
   int32_t f0 = f[0];
   int32_t f1 = f[1];
@@ -2502,6 +2506,7 @@ void fe_add(__generic fe h, const __generic fe f, const __generic fe g) {
   h[9] = h9;
 }
 
+inline __attribute__((always_inline))
 void fe_tobytes(unsigned char *s, const __generic fe h) {
   int32_t h0 = h[0];
   int32_t h1 = h[1];
@@ -2609,6 +2614,7 @@ void fe_tobytes(unsigned char *s, const __generic fe h) {
   s[31] = (unsigned char)(h9 >> 18);
 }
 
+inline __attribute__((always_inline))
 void fe_1(__generic fe h) {
   h[0] = 1;
   h[1] = 0;
@@ -2640,6 +2646,7 @@ void fe_1(__generic fe h) {
 
     Preconditions: b in {0,1}.
 */
+inline __attribute__((always_inline))
 void fe_cmov__constant(__generic fe f, constant fe g, unsigned int b) {
   int32_t f0 = f[0];
   int32_t f1 = f[1];
@@ -2696,6 +2703,7 @@ void fe_cmov__constant(__generic fe f, constant fe g, unsigned int b) {
   f[9] = f9 ^ x9;
 }
 
+inline __attribute__((always_inline))
 void fe_cmov(__generic fe f, const __generic fe g, unsigned int b) {
   int32_t f0 = f[0];
   int32_t f1 = f[1];
@@ -2752,6 +2760,7 @@ void fe_cmov(__generic fe f, const __generic fe g, unsigned int b) {
   f[9] = f9 ^ x9;
 }
 
+inline __attribute__((always_inline))
 void fe_sq(__generic fe h, const __generic fe f) {
   int32_t f0 = f[0];
   int32_t f1 = f[1];
@@ -2903,6 +2912,7 @@ void fe_sq(__generic fe h, const __generic fe f) {
     h = f
 */
 
+inline __attribute__((always_inline))
 void fe_copy(__generic fe h, const __generic fe f) {
   int32_t f0 = f[0];
   int32_t f1 = f[1];
@@ -2927,6 +2937,7 @@ void fe_copy(__generic fe h, const __generic fe f) {
   h[9] = f9;
 }
 
+inline __attribute__((always_inline))
 void fe_invert(__generic fe out, const __generic fe z) {
   fe t0;
   fe t1;
@@ -3011,6 +3022,7 @@ void fe_invert(__generic fe out, const __generic fe z) {
        |f| bounded by 1.1*2^26,1.1*2^25,1.1*2^26,1.1*2^25,etc.
 */
 
+inline __attribute__((always_inline))
 int fe_isnegative(const __generic fe f) {
   unsigned char s[32];
 
@@ -3027,6 +3039,7 @@ int fe_isnegative(const __generic fe f) {
        |f| bounded by 1.1*2^26,1.1*2^25,1.1*2^26,1.1*2^25,etc.
 */
 
+inline __attribute__((always_inline))
 int fe_isnonzero(const fe f) {
   unsigned char s[32];
   unsigned char r;
@@ -3113,6 +3126,7 @@ Postconditions:
    |h| bounded by 1.1*2^25,1.1*2^24,1.1*2^25,1.1*2^24,etc.
 */
 
+inline __attribute__((always_inline))
 void fe_neg(__generic fe h, const __generic fe f) {
   int32_t f0 = f[0];
   int32_t f1 = f[1];
@@ -3177,6 +3191,7 @@ Postconditions:
 See fe_mul.c for discussion of implementation strategy.
 */
 
+inline __attribute__((always_inline))
 void fe_sq2(__generic fe h, const __generic fe f) {
   int32_t f0 = f[0];
   int32_t f1 = f[1];
@@ -3338,12 +3353,14 @@ void fe_sq2(__generic fe h, const __generic fe f) {
 r = p
 */
 
+inline __attribute__((always_inline))
 void ge_p3_to_p2(ge_p2 *r, const ge_p3 *p) {
   fe_copy(r->X, p->X);
   fe_copy(r->Y, p->Y);
   fe_copy(r->Z, p->Z);
 }
 
+inline __attribute__((always_inline))
 void ge_p3_tobytes(unsigned char *s, const ge_p3 *h) {
   fe recip;
   fe x;
@@ -3355,6 +3372,7 @@ void ge_p3_tobytes(unsigned char *s, const ge_p3 *h) {
   s[31] ^= fe_isnegative(x) << 7;
 }
 
+inline __attribute__((always_inline))
 void ge_madd(ge_p1p1 *r, const ge_p3 *p, const ge_precomp *q) {
   fe t0;
   fe_add(r->X, p->Y, p->X);
@@ -3369,6 +3387,7 @@ void ge_madd(ge_p1p1 *r, const ge_p3 *p, const ge_precomp *q) {
   fe_sub(r->T, t0, r->T);
 }
 
+inline __attribute__((always_inline))
 void ge_p2_dbl(ge_p1p1 *r, const ge_p2 *p) {
   fe t0;
 
@@ -3383,12 +3402,14 @@ void ge_p2_dbl(ge_p1p1 *r, const ge_p2 *p) {
   fe_sub(r->T, r->T, r->Z);
 }
 
+inline __attribute__((always_inline))
 void ge_p3_dbl(ge_p1p1 *r, const ge_p3 *p) {
   ge_p2 q;
   ge_p3_to_p2(&q, p);
   ge_p2_dbl(r, &q);
 }
 
+inline __attribute__((always_inline))
 void ge_p3_0(ge_p3 *h) {
   fe_0(h->X);
   fe_1(h->Y);
@@ -3396,6 +3417,7 @@ void ge_p3_0(ge_p3 *h) {
   fe_0(h->T);
 }
 
+inline __attribute__((always_inline))
 void ge_p1p1_to_p3(ge_p3 *r, const ge_p1p1 *p) {
   fe_mul(r->X, p->X, p->T);
   fe_mul(r->Y, p->Y, p->Z);
@@ -3403,18 +3425,21 @@ void ge_p1p1_to_p3(ge_p3 *r, const ge_p1p1 *p) {
   fe_mul(r->T, p->X, p->Y);
 }
 
+inline __attribute__((always_inline))
 void ge_p2_0(ge_p2 *h) {
   fe_0(h->X);
   fe_1(h->Y);
   fe_1(h->Z);
 }
 
+inline __attribute__((always_inline))
 void ge_p1p1_to_p2(ge_p2 *r, const ge_p1p1 *p) {
   fe_mul(r->X, p->X, p->T);
   fe_mul(r->Y, p->Y, p->Z);
   fe_mul(r->Z, p->Z, p->T);
 }
 
+inline __attribute__((always_inline))
 static unsigned char equal(signed char b, signed char c) {
   unsigned char ub = b;
   unsigned char uc = c;
@@ -3425,6 +3450,7 @@ static unsigned char equal(signed char b, signed char c) {
   return (unsigned char)y;
 }
 
+inline __attribute__((always_inline))
 static unsigned char negative(signed char b) {
   uint64_t x =
       b;    /* 18446744073709551361..18446744073709551615: yes; 0..255: no */
@@ -3432,12 +3458,14 @@ static unsigned char negative(signed char b) {
   return (unsigned char)x;
 }
 
+inline __attribute__((always_inline))
 static void cmov(ge_precomp *t, const ge_precomp *u, unsigned char b) {
   fe_cmov(t->yplusx, u->yplusx, b);
   fe_cmov(t->yminusx, u->yminusx, b);
   fe_cmov(t->xy2d, u->xy2d, b);
 }
 
+inline __attribute__((always_inline))
 static void cmov__constant(ge_precomp *t, constant ge_precomp *u,
                            unsigned char b) {
   fe_cmov__constant(t->yplusx, u->yplusx, b);
@@ -3445,6 +3473,7 @@ static void cmov__constant(ge_precomp *t, constant ge_precomp *u,
   fe_cmov__constant(t->xy2d, u->xy2d, b);
 }
 
+inline __attribute__((always_inline))
 static void select_fix(ge_precomp *t, int pos, signed char b) {
   ge_precomp minust;
 
@@ -3724,6 +3753,7 @@ int sha512(const unsigned char *message, unsigned char *out) {
   return 0;
 }
 
+inline __attribute__((always_inline))
 void ed25519_create_keypair(unsigned char *public_key,
                             unsigned char *private_key,
                             const unsigned char *seed) {
@@ -3738,6 +3768,7 @@ void ed25519_create_keypair(unsigned char *public_key,
   ge_p3_tobytes(public_key, &A);
 }
 
+inline __attribute__((always_inline))
 static uchar * base58_encode(uchar *in, size_t *out_len, uchar *out) {
   unsigned int binary[8];
 

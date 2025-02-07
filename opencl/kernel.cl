@@ -3500,26 +3500,17 @@ r = p - q
  *
  * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
  */
-#define UINT64_C(v) (v##UL)
 
 /* Various logical functions */
-
-#define ROR64c(x, y)                                                           \
-  (((((x) & UINT64_C(0xFFFFFFFFFFFFFFFF)) >> ((uint64_t)(y) & UINT64_C(63))) | \
-    ((x) << ((uint64_t)(64 - ((y) & UINT64_C(63)))))) &                        \
-   UINT64_C(0xFFFFFFFFFFFFFFFF))
-
+#define ROR64c(x, y) (((((x)) >> ((y) & 63)) | ((x) << ((64 - ((y) & 63))))))
 #define Ch(x, y, z) (z ^ (x & (y ^ z)))
 #define Maj(x, y, z) (((x | y) & z) | (x & y))
 #define S(x, n) ROR64c(x, n)
-#define R(x, n) (((x) & UINT64_C(0xFFFFFFFFFFFFFFFF)) >> ((uint64_t)n))
+#define R(x, n) (((x)) >> (n))
 #define Sigma0(x) (S(x, 28) ^ S(x, 34) ^ S(x, 39))
 #define Sigma1(x) (S(x, 14) ^ S(x, 18) ^ S(x, 41))
 #define Gamma0(x) (S(x, 1) ^ S(x, 8) ^ R(x, 7))
 #define Gamma1(x) (S(x, 19) ^ S(x, 61) ^ R(x, 6))
-#ifndef MIN
-#define MIN(x, y) (((x) < (y)) ? (x) : (y))
-#endif
 
 void sha512(const unsigned char *message, unsigned char *out) {
 
@@ -3569,14 +3560,17 @@ void sha512(const unsigned char *message, unsigned char *out) {
   ((uchar*)W)[39] = (uchar) 0x80;
   ((uchar*)W)[121] = 1;
 
-  S[0] = UINT64_C(0x6a09e667f3bcc908);
-  S[1] = UINT64_C(0xbb67ae8584caa73b);
-  S[2] = UINT64_C(0x3c6ef372fe94f82b);
-  S[3] = UINT64_C(0xa54ff53a5f1d36f1);
-  S[4] = UINT64_C(0x510e527fade682d1);
-  S[5] = UINT64_C(0x9b05688c2b3e6c1f);
-  S[6] = UINT64_C(0x1f83d9abfb41bd6b);
-  S[7] = UINT64_C(0x5be0cd19137e2179);
+  #define APPLY_FEEDBACK(S,OP) \
+  S[0] OP 0x6a09e667f3bcc908UL; \
+  S[1] OP 0xbb67ae8584caa73bUL; \
+  S[2] OP 0x3c6ef372fe94f82bUL; \
+  S[3] OP 0xa54ff53a5f1d36f1UL; \
+  S[4] OP 0x510e527fade682d1UL; \
+  S[5] OP 0x9b05688c2b3e6c1fUL; \
+  S[6] OP 0x1f83d9abfb41bd6bUL; \
+  S[7] OP 0x5be0cd19137e2179UL;
+
+  APPLY_FEEDBACK(S,=)
 
   /* Fill W[16..79] */
   #pragma unroll
@@ -3590,14 +3584,14 @@ void sha512(const unsigned char *message, unsigned char *out) {
   h  = t0 + t1;
 
   #define RND_ITER(j,k0,k1,k2,k3,k4,k5,k6,k7) \
-  RND(S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],j*8+0,k0); \
-  RND(S[7],S[0],S[1],S[2],S[3],S[4],S[5],S[6],j*8+1,k1); \
-  RND(S[6],S[7],S[0],S[1],S[2],S[3],S[4],S[5],j*8+2,k2); \
-  RND(S[5],S[6],S[7],S[0],S[1],S[2],S[3],S[4],j*8+3,k3); \
-  RND(S[4],S[5],S[6],S[7],S[0],S[1],S[2],S[3],j*8+4,k4); \
-  RND(S[3],S[4],S[5],S[6],S[7],S[0],S[1],S[2],j*8+5,k5); \
-  RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],j*8+6,k6); \
-  RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],j*8+7,k7);
+  RND(S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],j*8+0,k0##UL); \
+  RND(S[7],S[0],S[1],S[2],S[3],S[4],S[5],S[6],j*8+1,k1##UL); \
+  RND(S[6],S[7],S[0],S[1],S[2],S[3],S[4],S[5],j*8+2,k2##UL); \
+  RND(S[5],S[6],S[7],S[0],S[1],S[2],S[3],S[4],j*8+3,k3##UL); \
+  RND(S[4],S[5],S[6],S[7],S[0],S[1],S[2],S[3],j*8+4,k4##UL); \
+  RND(S[3],S[4],S[5],S[6],S[7],S[0],S[1],S[2],j*8+5,k5##UL); \
+  RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],j*8+6,k6##UL); \
+  RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],j*8+7,k7##UL);
 
   RND_ITER(0,0x428a2f98d728ae22,0x7137449123ef65cd,0xb5c0fbcfec4d3b2f,0xe9b5dba58189dbbc,0x3956c25bf348b538,0x59f111f1b605d019,0x923f82a4af194f9b,0xab1c5ed5da6d8118)
   RND_ITER(1,0xd807aa98a3030242,0x12835b0145706fbe,0x243185be4ee4b28c,0x550c7dc3d5ffb4e2,0x72be5d74f27b896f,0x80deb1fe3b1696b1,0x9bdc06a725c71235,0xc19bf174cf692694)
@@ -3610,15 +3604,7 @@ void sha512(const unsigned char *message, unsigned char *out) {
   RND_ITER(8,0xca273eceea26619c,0xd186b8c721c0c207,0xeada7dd6cde0eb1e,0xf57d4f7fee6ed178,0x06f067aa72176fba,0x0a637dc5a2c898a6,0x113f9804bef90dae,0x1b710b35131c471b)
   RND_ITER(9,0x28db77f523047d84,0x32caab7b40c72493,0x3c9ebe0a15c9bebc,0x431d67c49c100d4c,0x4cc5d4becb3e42b6,0x597f299cfc657e2a,0x5fcb6fab3ad6faec,0x6c44198c4a475817)
 
-  /* Feedback */
-  S[0] += UINT64_C(0x6a09e667f3bcc908);
-  S[1] += UINT64_C(0xbb67ae8584caa73b);
-  S[2] += UINT64_C(0x3c6ef372fe94f82b);
-  S[3] += UINT64_C(0xa54ff53a5f1d36f1);
-  S[4] += UINT64_C(0x510e527fade682d1);
-  S[5] += UINT64_C(0x9b05688c2b3e6c1f);
-  S[6] += UINT64_C(0x1f83d9abfb41bd6b);
-  S[7] += UINT64_C(0x5be0cd19137e2179);
+  APPLY_FEEDBACK(S,+=)
 
   // We can now output our finalized bytes into the output buffer.
   COPY_REVERSED_ENDIAN_U64(out,S,0)

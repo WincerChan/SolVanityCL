@@ -9,6 +9,9 @@ typedef long int64_t;
 
 typedef int32_t fe[10];
 
+#define TO_UPPER(x) ((x) - ((x) > 32) * (33 - 9))
+
+
 constant uchar alphabet_indices[] = {
   0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0,
@@ -27,14 +30,6 @@ constant uchar alphabet_indices[] = {
   47, 48, 49, 50, 51, 52, 53, 54,
   55, 56, 57, 0, 0, 0, 0, 0
 };
-
-// Standard Base58 Alphabet
-constant uchar base58_alphabet[58] = {
-    '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N',
-    'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k',
-    'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'
-};
-
 
 constant uchar PREFIX[] = {83, 111, 76};
 constant uchar SUFFIX[] = {};
@@ -3877,42 +3872,13 @@ __kernel void generate_pubkey(constant uchar *seed, global uchar *out,
   else{
     // suffix matching
     #pragma unroll
-    for (size_t i = 0; i < sizeof(SUFFIX); i++) {
-        uchar addr_char = base58_alphabet[addr_raw[length - sizeof(SUFFIX) + i]];
-        uchar suffix_char = SUFFIX[i];
-        uchar lower_addr_char = addr_char;
-        uchar lower_suffix_char = suffix_char;
-
-        if (lower_addr_char >= 'A' && lower_addr_char <= 'Z') {
-            lower_addr_char += ('a' - 'A');
-        }
-        if (lower_suffix_char >= 'A' && lower_suffix_char <= 'Z') {
-            lower_suffix_char += ('a' - 'A');
-        }
-
-        if (lower_addr_char != lower_suffix_char) {
-          any_mismatch = 1;
-        }
+    for (size_t i = 0; i < sizeof(PREFIX); i++) {
+        any_mismatch |= TO_UPPER(addr_raw[i]) ^ TO_UPPER(alphabet_indices[PREFIX[i]]);
     }
-
     // prefix matching
     #pragma unroll
-    for (size_t i = 0; i < sizeof(PREFIX); i++) {
-        uchar addr_char = base58_alphabet[addr_raw[i]];
-        uchar prefix_char = PREFIX[i];
-        uchar lower_addr_char = addr_char;
-        uchar lower_prefix_char = prefix_char;
-
-        if (lower_addr_char >= 'A' && lower_addr_char <= 'Z') {
-            lower_addr_char += ('a' - 'A');
-        }
-        if (lower_prefix_char >= 'A' && lower_prefix_char <= 'Z') {
-            lower_prefix_char += ('a' - 'A');
-        }
-
-        if (lower_addr_char != lower_prefix_char) {
-          any_mismatch = 1;
-        }
+    for (size_t i = 0; i < sizeof(SUFFIX); i++) {
+        any_mismatch |= TO_UPPER(addr_raw[length - sizeof(SUFFIX) + i]) ^ TO_UPPER(alphabet_indices[SUFFIX[i]]);
     }
   }
 

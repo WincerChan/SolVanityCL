@@ -65,7 +65,7 @@ def check_character(name: str, character: str):
         raise e
 
 
-def get_kernel_source(starts_with: str, ends_with: str, cl):
+def get_kernel_source(starts_with: str, ends_with: str, cl, is_case_sensitive: bool):
     PREFIX_BYTES = list(bytes(starts_with.encode()))
     SUFFIX_BYTES = list(bytes(ends_with.encode()))
 
@@ -80,6 +80,10 @@ def get_kernel_source(starts_with: str, ends_with: str, cl):
         if s.startswith("constant uchar SUFFIX[]"):
             source_lines[i] = (
                 f"constant uchar SUFFIX[] = {{{', '.join(map(str, SUFFIX_BYTES))}}};\n"
+            )
+        if s.startswith("constant bool CASE_SENSITIVE"):
+            source_lines[i] = (
+                f"constant bool CASE_SENSITIVE = {str(is_case_sensitive).lower()};\n"
             )
 
     source_str = "".join(source_lines)
@@ -291,6 +295,12 @@ def cli():
     help="Number of the iteration occupied bits. Recommended 24, 26, 28, 30, 32. The larger the bits, the longer it takes to complete an iteration.",
     default=24,
 )
+@click.option(
+    "--is-case-sensitive",
+    type=bool,
+    help="Whether the search should be case sensitive or not.",
+    default=True,
+)
 @click.pass_context
 def search_pubkey(
     ctx,
@@ -300,6 +310,7 @@ def search_pubkey(
     output_dir: str,
     select_device: bool,
     iteration_bits: int,
+    is_case_sensitive: bool,
 ):
     """Search Solana vanity pubkey"""
 
@@ -312,7 +323,7 @@ def search_pubkey(
     check_character("ends_with", ends_with)
 
     logging.info(
-        f"Searching Solana pubkey that starts with '{starts_with}' and ends with '{ends_with}'"
+        f"Searching Solana pubkey that starts with '{starts_with}' and ends with '{ends_with} with case sensitivity {'on' if is_case_sensitive else 'off'}"
     )
     with Pool() as pool:
         gpu_counts = len(pool.apply(get_all_gpu_devices))
@@ -323,7 +334,7 @@ def search_pubkey(
     if select_device:
         with ThreadPoolExecutor(max_workers=1) as executor:
             context = cl.create_some_context()
-            kernel_source = get_kernel_source(starts_with, ends_with, cl)
+            kernel_source = get_kernel_source(starts_with, ends_with, cl, is_case_sensitive)
             while result_count < count:
                 setting = HostSetting(kernel_source, iteration_bits)
                 future = executor.submit(single_gpu_init, context, setting)
@@ -333,7 +344,7 @@ def search_pubkey(
 
     with multiprocessing.Manager() as manager:
         with Pool(processes=gpu_counts) as pool:
-            kernel_source = get_kernel_source(starts_with, ends_with, cl)
+            kernel_source = get_kernel_source(starts_with, ends_with, cl, is_case_sensitive)
             lock = manager.Lock()
             while result_count < count:
                 stop_flag = manager.Value("i", 0)

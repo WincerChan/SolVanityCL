@@ -9,6 +9,12 @@ typedef long int64_t;
 
 typedef int32_t fe[10];
 
+#define ADJUST_INPUT_CASE(x) \
+(CASE_SENSITIVE ? (x) : \
+    ((x) - ((x) > 32) * \
+        (((unsigned int) 67091966 >> ((x) & 31)) & 1) * \
+        (24 + (((unsigned int) 67079168 >> ((x) & 31)) & 1))))
+
 constant uchar alphabet_indices[] = {
   0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0,
@@ -30,6 +36,7 @@ constant uchar alphabet_indices[] = {
 
 constant uchar PREFIX[] = {83, 111, 76};
 constant uchar SUFFIX[] = {};
+constant bool CASE_SENSITIVE = true;
 
 /*
 r = p + q
@@ -3728,6 +3735,7 @@ __kernel void generate_pubkey(constant uchar *seed, global uchar *out,
   uchar public_key[32] __attribute__((aligned(4)));
   uchar private_key[64];
   uchar key_base[32];
+    
   #pragma unroll
   for (size_t i = 0; i < 32; i++) {
     key_base[i] = seed[i];
@@ -3745,14 +3753,19 @@ __kernel void generate_pubkey(constant uchar *seed, global uchar *out,
   uchar *addr_raw = base58_encode(public_key, &length, addr_buffer);
 
   unsigned int any_mismatch = 0;
-  #pragma unroll
-  for (size_t i = 0; i < sizeof(SUFFIX); i++) {
-    any_mismatch |= addr_raw[length - sizeof(SUFFIX) + i] ^ alphabet_indices[SUFFIX[i]];
-  }
+
+  // prefix matching
   #pragma unroll
   for (size_t i = 0; i < sizeof(PREFIX); i++) {
-    any_mismatch |= addr_raw[i] ^ alphabet_indices[PREFIX[i]];
+      any_mismatch |= ADJUST_INPUT_CASE(addr_raw[i]) ^ ADJUST_INPUT_CASE(alphabet_indices[PREFIX[i]]);
   }
+  // suffix matching
+  #pragma unroll
+  for (size_t i = 0; i < sizeof(SUFFIX); i++) {
+      any_mismatch |= ADJUST_INPUT_CASE(addr_raw[length - sizeof(SUFFIX) + i]) ^ ADJUST_INPUT_CASE(alphabet_indices[SUFFIX[i]]);
+  }
+
+
   if (!any_mismatch) {
     // assign to out
     if (out[0] == 0) {

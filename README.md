@@ -16,7 +16,7 @@ Only works on Linux platforms with Nvidia GPUs. [Check this doc](https://docs.nv
 
 ```bash
 $ docker build -t sol_vanity_cl .
-$ docker run --rm -it sol_vanity_cl
+$ docker run --rm -it --gpus all sol_vanity_cl
 ```
 
 You will enter the container. The source code is located in the /app directory in the container, and all dependencies have been installed.

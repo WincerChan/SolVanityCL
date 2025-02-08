@@ -394,7 +394,6 @@ def search_pubkey(
             )
             lock = manager.Lock()
             while result_count < count:
-                time.sleep(1)
                 stop_flag = manager.Value("i", 0)
                 results = pool.starmap(
                     multi_gpu_init,

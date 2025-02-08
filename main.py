@@ -1,14 +1,15 @@
 import json
 import logging
+import multiprocessing
 import os
 import platform
 import secrets
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor
 from math import ceil
 from multiprocessing.pool import Pool
-import multiprocessing
+from typing import List, Optional, Tuple
+
 import pyopencl as cl
 
 os.environ["PYOPENCL_COMPILER_OUTPUT"] = "1"
@@ -46,7 +47,9 @@ class HostSetting:
         next_number = current_number + (1 << self.iteration_bits)
         _number_bytes = next_number.to_bytes(32, "big")
         new_key32 = np.array([x for x in _number_bytes], dtype=np.ubyte)
-        carry_index = 0 - int(self.iteration_bytes) # for uint8 underflow on windows platform
+        carry_index = 0 - int(
+            self.iteration_bytes
+        )  # for uint8 underflow on windows platform
         if (new_key32[carry_index] < self.key32[carry_index]) and new_key32[
             carry_index
         ] != 0:
@@ -106,32 +109,73 @@ def get_all_gpu_devices():
     return [d.int_ptr for d in devices]
 
 
-def single_gpu_init(context, setting):
-    searcher = Searcher(
-        kernel_source=setting.kernel_source,
-        index=0,
-        setting=setting,
-        context=context,
-    )
-    i = 0
-    st = time.time()
-    while True:
-        result = searcher.find(i == 0)
-        if result[0]:
-            return [result]
-        if time.time() - st > 1:
-            i = 0
-            st = time.time()
-        else:
-            i += 1
+def get_selected_gpu_devices(platform_id, device_ids):
+    platform = cl.get_platforms()[platform_id]
+    devices, device_ptrs = platform.get_devices(), []
+    for d_id in device_ids:
+        device_ptrs.append(devices[d_id].int_ptr)
+    return device_ptrs
 
-def multi_gpu_init(index: int, setting: HostSetting, gpu_counts, stop_flag, lock):
+
+def _choose_platform():
+    platforms = cl.get_platforms()
+    print("Choose platform:")
+    for p_idx, _platform in enumerate(platforms):
+        print(f"{p_idx}. {_platform}")
+    return len(platforms)
+
+
+def _choose_devices(platform_id):
+    # not sorting, maybe has bug?
+    platforms = cl.get_platforms()
+    print("Choose device(s):")
+    all_devices = platforms[platform_id].get_devices()
+    for d_idx, device in enumerate(all_devices):
+        print(f"{d_idx}. {device}")
+
+
+def get_choosed_devices(pool):
+    if "CHOOSED_OPENCL_DEVICES" in os.environ:
+        (platform_id, device_ids) = os.environ.get("CHOOSED_OPENCL_DEVICES", "").split(
+            ":"
+        )
+        return int(platform_id), list(map(int, device_ids.split(",")))
+    platforms_count = pool.apply(_choose_platform)
+    platform_id = click.prompt(
+        "Choice ", default=0, type=click.IntRange(0, platforms_count)
+    )
+    pool.apply(_choose_devices, (platform_id,))
+    try:
+        device_ids = click.prompt(
+            "Choice, comma-separated ",
+            default="0",
+            type=str,
+        )
+        devices_list = list(map(int, device_ids.split(",")))
+    except ValueError:
+        print("Input Error.")
+        exit(-1)
+    print(
+        f"Set the environment variable CHOOSED_OPENCL_DEVICES='{platform_id}:{device_ids}' to avoid being asked again."
+    )
+    return (platform_id, devices_list)
+
+
+def multi_gpu_init(
+    index: int,
+    setting: HostSetting,
+    gpu_counts,
+    stop_flag,
+    lock,
+    choosed_devices: Optional[Tuple[int, List[int]]] = None,
+):
     # get all platforms and devices
     try:
         searcher = Searcher(
             kernel_source=setting.kernel_source,
             index=index,
             setting=setting,
+            choosed_devices=choosed_devices,
         )
         i = 0
         st = time.time()
@@ -176,22 +220,27 @@ def save_result(outputs, output_dir):
 
 class Searcher:
     def __init__(
-        self, *, kernel_source, index: int, setting: HostSetting, context=None
+        self,
+        *,
+        kernel_source,
+        index: int,
+        setting: HostSetting,
+        choosed_devices: Optional[Tuple[int, List[int]]] = None,
     ):
-        device_ids = get_all_gpu_devices()
-        # context and command queue
-        if context:
-            self.context = context
-            self.gpu_chunks = 1
+        if choosed_devices is None:
+            device_ids = get_all_gpu_devices()
         else:
-            self.context = cl.Context(
-                [cl.Device.from_int_ptr(device_ids[index])],
-            )
-            self.gpu_chunks = len(device_ids)
+            device_ids = get_selected_gpu_devices(*choosed_devices)
+        # context and command queue
+        self.context = cl.Context(
+            [cl.Device.from_int_ptr(device_ids[index])],
+        )
+        self.gpu_chunks = len(device_ids)
         self.command_queue = cl.CommandQueue(self.context)
 
         self.setting = setting
         self.index = index
+        self.display_index = index if not choosed_devices else choosed_devices[1][index]
 
         # build program and kernel
         program = cl.Program(self.context, kernel_source).build()
@@ -244,10 +293,12 @@ class Searcher:
             (global_worker_size,),
             (self.setting.local_work_size,),
         )
-        cl._enqueue_read_buffer(self.command_queue, self.memobj_output, self.output).wait()
+        cl._enqueue_read_buffer(
+            self.command_queue, self.memobj_output, self.output
+        ).wait()
         if log_stats:
             logging.info(
-                f"GPU {self.index} Speed: {global_worker_size/ ((time.time() - st) * 10**6):.2f} MH/s"
+                f"GPU {self.display_index} Speed: {global_worker_size / ((time.time() - st) * 10**6):.2f} MH/s"
             )
 
         return self.output
@@ -322,37 +373,42 @@ def search_pubkey(
     check_character("starts_with", starts_with)
     check_character("ends_with", ends_with)
 
+    choosed_devices = None
+    with Pool() as pool:
+        if select_device:
+            choosed_devices = get_choosed_devices(pool)
+            gpu_counts = len(choosed_devices[1])
+        else:
+            gpu_counts = len(pool.apply(get_all_gpu_devices))
+
     logging.info(
         f"Searching Solana pubkey that starts with '{starts_with}' and ends with '{ends_with} with case sensitivity {'on' if is_case_sensitive else 'off'}"
     )
-    with Pool() as pool:
-        gpu_counts = len(pool.apply(get_all_gpu_devices))
+    logging.info(f"Searching with {gpu_counts} OpenCL devices")
 
     result_count = 0
-
-    logging.info(f"Searching with {gpu_counts} OpenCL devices")
-    if select_device:
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            context = cl.create_some_context()
-            kernel_source = get_kernel_source(starts_with, ends_with, cl, is_case_sensitive)
-            while result_count < count:
-                setting = HostSetting(kernel_source, iteration_bits)
-                future = executor.submit(single_gpu_init, context, setting)
-                result = future.result()
-                result_count += save_result(result, output_dir)
-        return
-
     with multiprocessing.Manager() as manager:
         with Pool(processes=gpu_counts) as pool:
-            kernel_source = get_kernel_source(starts_with, ends_with, cl, is_case_sensitive)
+            kernel_source = get_kernel_source(
+                starts_with, ends_with, cl, is_case_sensitive
+            )
             lock = manager.Lock()
             while result_count < count:
+                time.sleep(1)
                 stop_flag = manager.Value("i", 0)
                 results = pool.starmap(
-                    multi_gpu_init, [
-                        (x, HostSetting(kernel_source, iteration_bits), gpu_counts, stop_flag, lock)
+                    multi_gpu_init,
+                    [
+                        (
+                            x,
+                            HostSetting(kernel_source, iteration_bits),
+                            gpu_counts,
+                            stop_flag,
+                            lock,
+                            choosed_devices,
+                        )
                         for x in range(gpu_counts)
-                    ]
+                    ],
                 )
                 result_count += save_result(results, output_dir)
 

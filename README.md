@@ -1,6 +1,6 @@
 ## Installation
 
-You can install it directly on Windows (not WSL) and Linux. For details on supported platforms, check [FAQs.md](./FAQs.md).
+You can install it directly on Windows (not WSL) and on Unix-like systems. For details on supported platforms, check [FAQs.md](./FAQs.md).
 
 ```bash
 $ python3 -m pip install -r requirements.txt

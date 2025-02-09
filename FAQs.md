@@ -8,7 +8,7 @@ Support for NVIDIA Multi-GPU. Tested with 2 GPUs, 4 GPUs, and 8 GPUs. Due to a k
 
 ## Why does this project not work on my computer?
 
-1. Make sure your platform is supported.
+1. Make sure your [platform is supported](#what-platforms-does-this-project-support).
 2. For those with both a CPU and GPU that support OpenCL, please ensure you select the GPU to run the program (use the `--select-device` parameter)!
 
 ## How long does this program take to generate a matched address?

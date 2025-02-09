@@ -1,11 +1,9 @@
 ## Installation
 
+You can install it directly on Windows (not WSL) and Linux. For details on supported platforms, check [FAQs.md](./FAQs.md).
+
 ```bash
 $ python3 -m pip install -r requirements.txt
-
-# or
-
-$ pip3 install -r requirements.txt
 ```
 
 Requires Python 3.6 or higher.
@@ -21,7 +19,7 @@ $ docker run --rm -it --gpus all sol_vanity_cl
 
 You will enter the container. The source code is located in the /app directory in the container, and all dependencies have been installed.
 
-Use the Docker image loerfy/sol_vanity_cl:latest. You can easily use vast.ai or runpod.io to run this program. Please note:
+Use the Docker image loerfy/sol_vanity_cl:latest. You can easily use the template I created on [vast.ai](https://cloud.vast.ai/?ref_id=109219&creator_id=109219&name=SolVanityCL) or [runpod.io](https://runpod.io/console/deploy?template=fgllgqsl24&ref=uh5x1hv5) to run this program. Please note:
 
 1. The device’s CUDA version should be greater than 12.0.
 2. The source code is located in the /app directory, so you don’t need to download the code from GitHub.
@@ -29,7 +27,7 @@ Use the Docker image loerfy/sol_vanity_cl:latest. You can easily use vast.ai or 
 ## Usage
 
 ```bash
-$ python main.py
+$ python3 main.py
 
 Usage: main.py [OPTIONS] COMMAND [ARGS]...
 
@@ -44,7 +42,7 @@ Commands:
 ### Search Pubkey
 
 ```bash
-$ python main.py search-pubkey --help
+$ python3 main.py search-pubkey --help
 
 Usage: main.py search-pubkey [OPTIONS]
 
@@ -62,15 +60,16 @@ Options:
                                   Recommended 24, 26, 28, 30, 32. The larger
                                   the bits, the longer it takes to complete an
                                   iteration.  [default: 24]
-  --is-case-sensitive BOOLEAN     Whether the search should be case sensitive or not. [default: True]
+  --is-case-sensitive BOOLEAN     Whether the search should be case sensitive
+                                  or not. [default: True]
   --help                          Show this message and exit.
 ```
 
 Example:
 
 ```bash
-$ python main.py search-pubkey --starts-with SoL # run
-$ solana-keygen pubkey SoLxxxxxxxxxxx.json # verify
+$ python3 main.py search-pubkey --starts-with SoL # run
+$ solana-keygen pubkey SoLxxxxxxxxxxx.json # you should install solana cli to verify it
 ```
 
 

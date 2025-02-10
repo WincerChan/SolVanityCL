@@ -297,13 +297,13 @@ class Searcher:
             (global_worker_size,),
             (self.setting.local_work_size,),
         )
-        if self.prev_time is not None and self.is_nvidia:
+        if log_stats and self.prev_time is not None and self.is_nvidia:
             time.sleep(self.prev_time * 0.98)
         cl._enqueue_read_buffer(
             self.command_queue, self.memobj_output, self.output
         ).wait()
-        self.prev_time = time.time() - st
         if log_stats:
+            self.prev_time = time.time() - st
             logging.info(
                 f"GPU {self.display_index} Speed: {global_worker_size / ((time.time() - st) * 10**6):.2f} MH/s"
             )

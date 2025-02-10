@@ -302,7 +302,6 @@ class Searcher:
             self.command_queue, self.memobj_output, self.output
         ).wait()
         self.prev_time = time.time() - st
-        logging.info(f"GPU {self.display_index} prev time: {self.prev_time}")
         if log_stats:
             logging.info(
                 f"GPU {self.display_index} Speed: {global_worker_size / ((time.time() - st) * 10**6):.2f} MH/s"

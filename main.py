@@ -241,6 +241,10 @@ class Searcher:
         self.setting = setting
         self.index = index
         self.display_index = index if not choosed_devices else choosed_devices[1][index]
+        self.prev_time = None
+        self.is_nvidia = (
+            "NVIDIA" in cl.Device.from_int_ptr(device_ids[index]).platform.name.upper()
+        )
 
         # build program and kernel
         program = cl.Program(self.context, kernel_source).build()
@@ -293,9 +297,12 @@ class Searcher:
             (global_worker_size,),
             (self.setting.local_work_size,),
         )
+        if self.prev_time is not None and self.is_nvidia:
+            time.sleep(self.prev_time * 0.98)
         cl._enqueue_read_buffer(
             self.command_queue, self.memobj_output, self.output
         ).wait()
+        self.prev_time = time.time() - st
         if log_stats:
             logging.info(
                 f"GPU {self.display_index} Speed: {global_worker_size / ((time.time() - st) * 10**6):.2f} MH/s"

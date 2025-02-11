@@ -241,6 +241,10 @@ class Searcher:
         self.setting = setting
         self.index = index
         self.display_index = index if not choosed_devices else choosed_devices[1][index]
+        self.prev_time = None
+        self.is_nvidia = (
+            "NVIDIA" in cl.Device.from_int_ptr(device_ids[index]).platform.name.upper()
+        )
 
         # build program and kernel
         program = cl.Program(self.context, kernel_source).build()
@@ -282,10 +286,9 @@ class Searcher:
         return valid_outputs
 
     def find(self, log_stats=True):
+        st = time.time()
         cl.enqueue_copy(self.command_queue, self.memobj_key32, self.setting.key32)
-        self.setting.increase_key32()
 
-        st = time.time() if log_stats else 0
         global_worker_size = self.setting.global_work_size // self.gpu_chunks
         cl.enqueue_nd_range_kernel(
             self.command_queue,
@@ -293,9 +296,15 @@ class Searcher:
             (global_worker_size,),
             (self.setting.local_work_size,),
         )
+        # This uses a bit of CPU, so we may as well do it while waiting for the GPU to compute.
+        self.setting.increase_key32()
+
+        if self.prev_time is not None and self.is_nvidia:
+            time.sleep(self.prev_time * 0.98)
         cl._enqueue_read_buffer(
             self.command_queue, self.memobj_output, self.output
         ).wait()
+        self.prev_time = time.time() - st
         if log_stats:
             logging.info(
                 f"GPU {self.display_index} Speed: {global_worker_size / ((time.time() - st) * 10**6):.2f} MH/s"

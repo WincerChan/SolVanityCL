@@ -180,7 +180,7 @@ def multi_gpu_init(
         i = 0
         st = time.time()
         while True:
-            result = searcher.find(i == 0, st=time.time())
+            result = searcher.find(i == 0)
             if result[0]:
                 with lock:
                     if not stop_flag.value:
@@ -285,9 +285,9 @@ class Searcher:
             valid_outputs.append(output)
         return valid_outputs
 
-    def find(self, log_stats=True, st=0.0):
+    def find(self, log_stats=True):
+        st = time.time()
         cl.enqueue_copy(self.command_queue, self.memobj_key32, self.setting.key32)
-        self.setting.increase_key32()
 
         global_worker_size = self.setting.global_work_size // self.gpu_chunks
         cl.enqueue_nd_range_kernel(
@@ -296,6 +296,9 @@ class Searcher:
             (global_worker_size,),
             (self.setting.local_work_size,),
         )
+        # This uses a bit of CPU, so we may as well do it while waiting for the GPU to compute.
+        self.setting.increase_key32()
+
         if self.prev_time is not None and self.is_nvidia:
             time.sleep(self.prev_time * 0.98)
         cl._enqueue_read_buffer(

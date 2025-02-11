@@ -62,6 +62,7 @@ Options:
                                   Recommended 24, 26, 28, 30, 32. The larger
                                   the bits, the longer it takes to complete an
                                   iteration.  [default: 24]
+  --is-case-sensitive BOOLEAN     Whether the search should be case sensitive or not. [default: True]
   --help                          Show this message and exit.
 ```
 

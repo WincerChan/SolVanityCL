@@ -71,6 +71,7 @@ typedef struct __attribute__((aligned(32))) {
     h = 0
 */
 
+inline __attribute__((always_inline))
 void fe_0(__generic fe h) {
   h[0] = 0;
   h[1] = 0;
@@ -2200,6 +2201,7 @@ constant ge_precomp base[32][8] = {
     },
 };
 
+inline __attribute__((always_inline))
 void fe_mul(__generic fe h, const __generic fe f, const __generic fe g) {
   int32_t f0 = f[0];
   int32_t f1 = f[1];
@@ -2421,6 +2423,7 @@ void fe_mul(__generic fe h, const __generic fe f, const __generic fe g) {
   h[9] = (int32_t)h9;
 }
 
+inline __attribute__((always_inline))
 void fe_sub(__generic fe h, const __generic fe f, const __generic fe g) {
   int32_t f0 = f[0];
   int32_t f1 = f[1];
@@ -2465,6 +2468,7 @@ void fe_sub(__generic fe h, const __generic fe f, const __generic fe g) {
   h[9] = h9;
 }
 
+inline __attribute__((always_inline))
 void fe_add(__generic fe h, const __generic fe f, const __generic fe g) {
   int32_t f0 = f[0];
   int32_t f1 = f[1];
@@ -2509,6 +2513,7 @@ void fe_add(__generic fe h, const __generic fe f, const __generic fe g) {
   h[9] = h9;
 }
 
+inline __attribute__((always_inline))
 void fe_tobytes(unsigned char *s, const __generic fe h) {
   int32_t h0 = h[0];
   int32_t h1 = h[1];
@@ -2616,6 +2621,7 @@ void fe_tobytes(unsigned char *s, const __generic fe h) {
   s[31] = (unsigned char)(h9 >> 18);
 }
 
+inline __attribute__((always_inline))
 void fe_1(__generic fe h) {
   h[0] = 1;
   h[1] = 0;
@@ -2647,6 +2653,7 @@ void fe_1(__generic fe h) {
 
     Preconditions: b in {0,1}.
 */
+inline __attribute__((always_inline))
 void fe_cmov__constant(__generic fe f, constant fe g, unsigned int b) {
   int32_t f0 = f[0];
   int32_t f1 = f[1];
@@ -2703,6 +2710,7 @@ void fe_cmov__constant(__generic fe f, constant fe g, unsigned int b) {
   f[9] = f9 ^ x9;
 }
 
+inline __attribute__((always_inline))
 void fe_cmov(__generic fe f, const __generic fe g, unsigned int b) {
   int32_t f0 = f[0];
   int32_t f1 = f[1];
@@ -2759,6 +2767,7 @@ void fe_cmov(__generic fe f, const __generic fe g, unsigned int b) {
   f[9] = f9 ^ x9;
 }
 
+inline __attribute__((always_inline))
 void fe_sq(__generic fe h, const __generic fe f) {
   int32_t f0 = f[0];
   int32_t f1 = f[1];
@@ -2910,6 +2919,7 @@ void fe_sq(__generic fe h, const __generic fe f) {
     h = f
 */
 
+inline __attribute__((always_inline))
 void fe_copy(__generic fe h, const __generic fe f) {
   int32_t f0 = f[0];
   int32_t f1 = f[1];
@@ -2934,6 +2944,7 @@ void fe_copy(__generic fe h, const __generic fe f) {
   h[9] = f9;
 }
 
+inline __attribute__((always_inline))
 void fe_invert(__generic fe out, const __generic fe z) {
   fe t0;
   fe t1;
@@ -2952,58 +2963,60 @@ void fe_invert(__generic fe out, const __generic fe z) {
   fe_sq(t2, t0);
 
   fe_mul(t1, t1, t2);
-  fe_sq(t2, t1);
+  fe_copy(t2, t1);
 
-  for (i = 1; i < 5; ++i) {
+  for (i = 0; i < 5; ++i) {
     fe_sq(t2, t2);
   }
 
   fe_mul(t1, t2, t1);
-  fe_sq(t2, t1);
+  fe_copy(t2, t1);
 
-  for (i = 1; i < 10; ++i) {
+  #pragma unroll 2
+  for (i = 0; i < 10; ++i) {
     fe_sq(t2, t2);
   }
 
   fe_mul(t2, t2, t1);
-  fe_sq(t3, t2);
+  fe_copy(t3, t2);
 
-  for (i = 1; i < 20; ++i) {
+  #pragma unroll 2
+  for (i = 0; i < 20; ++i) {
     fe_sq(t3, t3);
   }
 
   fe_mul(t2, t3, t2);
-  fe_sq(t2, t2);
 
-  for (i = 1; i < 10; ++i) {
+  for (i = 0; i < 10; ++i) {
     fe_sq(t2, t2);
   }
 
   fe_mul(t1, t2, t1);
-  fe_sq(t2, t1);
+  fe_copy(t2, t1);
 
-  for (i = 1; i < 50; ++i) {
+  #pragma unroll 2
+  for (i = 0; i < 50; ++i) {
     fe_sq(t2, t2);
   }
 
   fe_mul(t2, t2, t1);
-  fe_sq(t3, t2);
+  fe_copy(t3, t2);
 
-  for (i = 1; i < 100; ++i) {
+  #pragma unroll 2
+  for (i = 0; i < 100; ++i) {
     fe_sq(t3, t3);
   }
 
   fe_mul(t2, t3, t2);
-  fe_sq(t2, t2);
 
-  for (i = 1; i < 50; ++i) {
+  #pragma unroll 2
+  for (i = 0; i < 50; ++i) {
     fe_sq(t2, t2);
   }
 
   fe_mul(t1, t2, t1);
-  fe_sq(t1, t1);
 
-  for (i = 1; i < 5; ++i) {
+  for (i = 0; i < 5; ++i) {
     fe_sq(t1, t1);
   }
 
@@ -3018,64 +3031,13 @@ void fe_invert(__generic fe out, const __generic fe z) {
        |f| bounded by 1.1*2^26,1.1*2^25,1.1*2^26,1.1*2^25,etc.
 */
 
+inline __attribute__((always_inline))
 int fe_isnegative(const __generic fe f) {
   unsigned char s[32];
 
   fe_tobytes(s, f);
 
   return s[0] & 1;
-}
-
-/*
-    return 1 if f == 0
-    return 0 if f != 0
-
-    Preconditions:
-       |f| bounded by 1.1*2^26,1.1*2^25,1.1*2^26,1.1*2^25,etc.
-*/
-
-int fe_isnonzero(const fe f) {
-  unsigned char s[32];
-  unsigned char r;
-
-  fe_tobytes(s, f);
-
-  r = s[0];
-#define F(i) r |= s[i]
-  F(1);
-  F(2);
-  F(3);
-  F(4);
-  F(5);
-  F(6);
-  F(7);
-  F(8);
-  F(9);
-  F(10);
-  F(11);
-  F(12);
-  F(13);
-  F(14);
-  F(15);
-  F(16);
-  F(17);
-  F(18);
-  F(19);
-  F(20);
-  F(21);
-  F(22);
-  F(23);
-  F(24);
-  F(25);
-  F(26);
-  F(27);
-  F(28);
-  F(29);
-  F(30);
-  F(31);
-#undef F
-
-  return r != 0;
 }
 
 /*
@@ -3120,6 +3082,7 @@ Postconditions:
    |h| bounded by 1.1*2^25,1.1*2^24,1.1*2^25,1.1*2^24,etc.
 */
 
+inline __attribute__((always_inline))
 void fe_neg(__generic fe h, const __generic fe f) {
   int32_t f0 = f[0];
   int32_t f1 = f[1];
@@ -3184,6 +3147,7 @@ Postconditions:
 See fe_mul.c for discussion of implementation strategy.
 */
 
+inline __attribute__((always_inline))
 void fe_sq2(__generic fe h, const __generic fe f) {
   int32_t f0 = f[0];
   int32_t f1 = f[1];
@@ -3345,12 +3309,14 @@ void fe_sq2(__generic fe h, const __generic fe f) {
 r = p
 */
 
+inline __attribute__((always_inline))
 void ge_p3_to_p2(ge_p2 *r, const ge_p3 *p) {
   fe_copy(r->X, p->X);
   fe_copy(r->Y, p->Y);
   fe_copy(r->Z, p->Z);
 }
 
+inline __attribute__((always_inline))
 void ge_p3_tobytes(unsigned char *s, const ge_p3 *h) {
   fe recip;
   fe x;
@@ -3362,6 +3328,7 @@ void ge_p3_tobytes(unsigned char *s, const ge_p3 *h) {
   s[31] ^= fe_isnegative(x) << 7;
 }
 
+inline __attribute__((always_inline))
 void ge_madd(ge_p1p1 *r, const ge_p3 *p, const ge_precomp *q) {
   fe t0;
   fe_add(r->X, p->Y, p->X);
@@ -3376,6 +3343,7 @@ void ge_madd(ge_p1p1 *r, const ge_p3 *p, const ge_precomp *q) {
   fe_sub(r->T, t0, r->T);
 }
 
+inline __attribute__((always_inline))
 void ge_p2_dbl(ge_p1p1 *r, const ge_p2 *p) {
   fe t0;
 
@@ -3390,12 +3358,14 @@ void ge_p2_dbl(ge_p1p1 *r, const ge_p2 *p) {
   fe_sub(r->T, r->T, r->Z);
 }
 
+inline __attribute__((always_inline))
 void ge_p3_dbl(ge_p1p1 *r, const ge_p3 *p) {
   ge_p2 q;
   ge_p3_to_p2(&q, p);
   ge_p2_dbl(r, &q);
 }
 
+inline __attribute__((always_inline))
 void ge_p3_0(ge_p3 *h) {
   fe_0(h->X);
   fe_1(h->Y);
@@ -3403,6 +3373,7 @@ void ge_p3_0(ge_p3 *h) {
   fe_0(h->T);
 }
 
+inline __attribute__((always_inline))
 void ge_p1p1_to_p3(ge_p3 *r, const ge_p1p1 *p) {
   fe_mul(r->X, p->X, p->T);
   fe_mul(r->Y, p->Y, p->Z);
@@ -3410,41 +3381,28 @@ void ge_p1p1_to_p3(ge_p3 *r, const ge_p1p1 *p) {
   fe_mul(r->T, p->X, p->Y);
 }
 
+inline __attribute__((always_inline))
 void ge_p2_0(ge_p2 *h) {
   fe_0(h->X);
   fe_1(h->Y);
   fe_1(h->Z);
 }
 
+inline __attribute__((always_inline))
 void ge_p1p1_to_p2(ge_p2 *r, const ge_p1p1 *p) {
   fe_mul(r->X, p->X, p->T);
   fe_mul(r->Y, p->Y, p->Z);
   fe_mul(r->Z, p->Z, p->T);
 }
 
-static unsigned char equal(signed char b, signed char c) {
-  unsigned char ub = b;
-  unsigned char uc = c;
-  unsigned char x = ub ^ uc; /* 0: yes; 1..255: no */
-  uint64_t y = x;            /* 0: yes; 1..255: no */
-  y -= 1;                    /* large: yes; 0..254: no */
-  y >>= 63;                  /* 1: yes; 0: no */
-  return (unsigned char)y;
-}
-
-static unsigned char negative(signed char b) {
-  uint64_t x =
-      b;    /* 18446744073709551361..18446744073709551615: yes; 0..255: no */
-  x >>= 63; /* 1: yes; 0: no */
-  return (unsigned char)x;
-}
-
+inline __attribute__((always_inline))
 static void cmov(ge_precomp *t, const ge_precomp *u, unsigned char b) {
   fe_cmov(t->yplusx, u->yplusx, b);
   fe_cmov(t->yminusx, u->yminusx, b);
   fe_cmov(t->xy2d, u->xy2d, b);
 }
 
+inline __attribute__((always_inline))
 static void cmov__constant(ge_precomp *t, constant ge_precomp *u,
                            unsigned char b) {
   fe_cmov__constant(t->yplusx, u->yplusx, b);
@@ -3452,26 +3410,26 @@ static void cmov__constant(ge_precomp *t, constant ge_precomp *u,
   fe_cmov__constant(t->xy2d, u->xy2d, b);
 }
 
+inline __attribute__((always_inline))
 static void select_fix(ge_precomp *t, int pos, signed char b) {
   ge_precomp minust;
 
-  unsigned char bnegative = negative(b);
-  unsigned char babs = b - (((-bnegative) & b) << 1);
+  unsigned char babs = abs(b);
   fe_1(t->yplusx);
   fe_1(t->yminusx);
   fe_0(t->xy2d);
-  cmov__constant(t, &base[pos][0], equal(babs, 1));
-  cmov__constant(t, &base[pos][1], equal(babs, 2));
-  cmov__constant(t, &base[pos][2], equal(babs, 3));
-  cmov__constant(t, &base[pos][3], equal(babs, 4));
-  cmov__constant(t, &base[pos][4], equal(babs, 5));
-  cmov__constant(t, &base[pos][5], equal(babs, 6));
-  cmov__constant(t, &base[pos][6], equal(babs, 7));
-  cmov__constant(t, &base[pos][7], equal(babs, 8));
+  cmov__constant(t, &base[pos][0], babs == 1);
+  cmov__constant(t, &base[pos][1], babs == 2);
+  cmov__constant(t, &base[pos][2], babs == 3);
+  cmov__constant(t, &base[pos][3], babs == 4);
+  cmov__constant(t, &base[pos][4], babs == 5);
+  cmov__constant(t, &base[pos][5], babs == 6);
+  cmov__constant(t, &base[pos][6], babs == 7);
+  cmov__constant(t, &base[pos][7], babs == 8);
   fe_copy(minust.yplusx, t->yminusx);
   fe_copy(minust.yminusx, t->yplusx);
   fe_neg(minust.xy2d, t->xy2d);
-  cmov(t, &minust, bnegative);
+  cmov(t, &minust, b < 0);
 }
 
 /*
@@ -3549,109 +3507,19 @@ r = p - q
  *
  * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
  */
-typedef struct sha512_context_ {
-  uint64_t length, state[8];
-  size_t curlen;
-  unsigned char buf[128];
-} sha512_context;
-
-/* the K array */
-#define UINT64_C(v) (v##UL)
-
-constant uint64_t K[80] = {
-    UINT64_C(0x428a2f98d728ae22), UINT64_C(0x7137449123ef65cd),
-    UINT64_C(0xb5c0fbcfec4d3b2f), UINT64_C(0xe9b5dba58189dbbc),
-    UINT64_C(0x3956c25bf348b538), UINT64_C(0x59f111f1b605d019),
-    UINT64_C(0x923f82a4af194f9b), UINT64_C(0xab1c5ed5da6d8118),
-    UINT64_C(0xd807aa98a3030242), UINT64_C(0x12835b0145706fbe),
-    UINT64_C(0x243185be4ee4b28c), UINT64_C(0x550c7dc3d5ffb4e2),
-    UINT64_C(0x72be5d74f27b896f), UINT64_C(0x80deb1fe3b1696b1),
-    UINT64_C(0x9bdc06a725c71235), UINT64_C(0xc19bf174cf692694),
-    UINT64_C(0xe49b69c19ef14ad2), UINT64_C(0xefbe4786384f25e3),
-    UINT64_C(0x0fc19dc68b8cd5b5), UINT64_C(0x240ca1cc77ac9c65),
-    UINT64_C(0x2de92c6f592b0275), UINT64_C(0x4a7484aa6ea6e483),
-    UINT64_C(0x5cb0a9dcbd41fbd4), UINT64_C(0x76f988da831153b5),
-    UINT64_C(0x983e5152ee66dfab), UINT64_C(0xa831c66d2db43210),
-    UINT64_C(0xb00327c898fb213f), UINT64_C(0xbf597fc7beef0ee4),
-    UINT64_C(0xc6e00bf33da88fc2), UINT64_C(0xd5a79147930aa725),
-    UINT64_C(0x06ca6351e003826f), UINT64_C(0x142929670a0e6e70),
-    UINT64_C(0x27b70a8546d22ffc), UINT64_C(0x2e1b21385c26c926),
-    UINT64_C(0x4d2c6dfc5ac42aed), UINT64_C(0x53380d139d95b3df),
-    UINT64_C(0x650a73548baf63de), UINT64_C(0x766a0abb3c77b2a8),
-    UINT64_C(0x81c2c92e47edaee6), UINT64_C(0x92722c851482353b),
-    UINT64_C(0xa2bfe8a14cf10364), UINT64_C(0xa81a664bbc423001),
-    UINT64_C(0xc24b8b70d0f89791), UINT64_C(0xc76c51a30654be30),
-    UINT64_C(0xd192e819d6ef5218), UINT64_C(0xd69906245565a910),
-    UINT64_C(0xf40e35855771202a), UINT64_C(0x106aa07032bbd1b8),
-    UINT64_C(0x19a4c116b8d2d0c8), UINT64_C(0x1e376c085141ab53),
-    UINT64_C(0x2748774cdf8eeb99), UINT64_C(0x34b0bcb5e19b48a8),
-    UINT64_C(0x391c0cb3c5c95a63), UINT64_C(0x4ed8aa4ae3418acb),
-    UINT64_C(0x5b9cca4f7763e373), UINT64_C(0x682e6ff3d6b2b8a3),
-    UINT64_C(0x748f82ee5defb2fc), UINT64_C(0x78a5636f43172f60),
-    UINT64_C(0x84c87814a1f0ab72), UINT64_C(0x8cc702081a6439ec),
-    UINT64_C(0x90befffa23631e28), UINT64_C(0xa4506cebde82bde9),
-    UINT64_C(0xbef9a3f7b2c67915), UINT64_C(0xc67178f2e372532b),
-    UINT64_C(0xca273eceea26619c), UINT64_C(0xd186b8c721c0c207),
-    UINT64_C(0xeada7dd6cde0eb1e), UINT64_C(0xf57d4f7fee6ed178),
-    UINT64_C(0x06f067aa72176fba), UINT64_C(0x0a637dc5a2c898a6),
-    UINT64_C(0x113f9804bef90dae), UINT64_C(0x1b710b35131c471b),
-    UINT64_C(0x28db77f523047d84), UINT64_C(0x32caab7b40c72493),
-    UINT64_C(0x3c9ebe0a15c9bebc), UINT64_C(0x431d67c49c100d4c),
-    UINT64_C(0x4cc5d4becb3e42b6), UINT64_C(0x597f299cfc657e2a),
-    UINT64_C(0x5fcb6fab3ad6faec), UINT64_C(0x6c44198c4a475817)};
 
 /* Various logical functions */
-
-#define ROR64c(x, y)                                                           \
-  (((((x) & UINT64_C(0xFFFFFFFFFFFFFFFF)) >> ((uint64_t)(y) & UINT64_C(63))) | \
-    ((x) << ((uint64_t)(64 - ((y) & UINT64_C(63)))))) &                        \
-   UINT64_C(0xFFFFFFFFFFFFFFFF))
-
-#define STORE64H(x, y)                                                         \
-  {                                                                            \
-    (y)[0] = (unsigned char)(((x) >> 56) & 255);                               \
-    (y)[1] = (unsigned char)(((x) >> 48) & 255);                               \
-    (y)[2] = (unsigned char)(((x) >> 40) & 255);                               \
-    (y)[3] = (unsigned char)(((x) >> 32) & 255);                               \
-    (y)[4] = (unsigned char)(((x) >> 24) & 255);                               \
-    (y)[5] = (unsigned char)(((x) >> 16) & 255);                               \
-    (y)[6] = (unsigned char)(((x) >> 8) & 255);                                \
-    (y)[7] = (unsigned char)((x) & 255);                                       \
-  }
-
-#define LOAD64H(x, y)                                                          \
-  {                                                                            \
-    x = (((uint64_t)((y)[0] & 255)) << 56) |                                   \
-        (((uint64_t)((y)[1] & 255)) << 48) |                                   \
-        (((uint64_t)((y)[2] & 255)) << 40) |                                   \
-        (((uint64_t)((y)[3] & 255)) << 32) |                                   \
-        (((uint64_t)((y)[4] & 255)) << 24) |                                   \
-        (((uint64_t)((y)[5] & 255)) << 16) |                                   \
-        (((uint64_t)((y)[6] & 255)) << 8) | (((uint64_t)((y)[7] & 255)));      \
-  }
-
+#define ROR64c(x, y) (((((x)) >> ((y) & 63)) | ((x) << ((64 - ((y) & 63))))))
 #define Ch(x, y, z) (z ^ (x & (y ^ z)))
 #define Maj(x, y, z) (((x | y) & z) | (x & y))
 #define S(x, n) ROR64c(x, n)
-#define R(x, n) (((x) & UINT64_C(0xFFFFFFFFFFFFFFFF)) >> ((uint64_t)n))
+#define R(x, n) (((x)) >> (n))
 #define Sigma0(x) (S(x, 28) ^ S(x, 34) ^ S(x, 39))
 #define Sigma1(x) (S(x, 14) ^ S(x, 18) ^ S(x, 41))
 #define Gamma0(x) (S(x, 1) ^ S(x, 8) ^ R(x, 7))
 #define Gamma1(x) (S(x, 19) ^ S(x, 61) ^ R(x, 6))
-#ifndef MIN
-#define MIN(x, y) (((x) < (y)) ? (x) : (y))
-#endif
 
-int sha512(const unsigned char *message, unsigned char *out) {
-  sha512_context md;
-  md.state[0] = UINT64_C(0x6a09e667f3bcc908);
-  md.state[1] = UINT64_C(0xbb67ae8584caa73b);
-  md.state[2] = UINT64_C(0x3c6ef372fe94f82b);
-  md.state[3] = UINT64_C(0xa54ff53a5f1d36f1);
-  md.state[4] = UINT64_C(0x510e527fade682d1);
-  md.state[5] = UINT64_C(0x9b05688c2b3e6c1f);
-  md.state[6] = UINT64_C(0x1f83d9abfb41bd6b);
-  md.state[7] = UINT64_C(0x5be0cd19137e2179);
+void sha512(const unsigned char *message, unsigned char *out) {
 
   // sha512_update inlined
   //
@@ -3664,8 +3532,6 @@ int sha512(const unsigned char *message, unsigned char *out) {
   //   * We can eliminate a MIN(inlen, (128 - md.curlen)) comparison, specialize to 32, branch prediction improvement.
   //   * We can eliminate the in/inlen tracking as we will never subtract while under 128
   //   * As a result, the only thing update does is copy the bytes into the buffer.
-  #pragma unroll
-  for (int i = 0; i < 32; ++i) md.buf[i] = message[i];
 
   // sha512_final inlined
   //
@@ -3676,61 +3542,89 @@ int sha512(const unsigned char *message, unsigned char *out) {
   // This means:
   //   * We don't need to care about the curlen > 112 check. Eliminating a branch.
   //   * We only need to run one round of sha512_compress, so we can it entirely as we don't need to unroll.
-  md.length = 32 * UINT64_C(8);
-  md.buf[32] = (uchar) 0x80;
-
-  #pragma unroll
-  for (int i = 33; i < 120; i++) md.buf[i] = (uchar) 0;
-  md.curlen = 120;
-
-  STORE64H(md.length, md.buf + 120);
 
   // Inline sha512_compress
   uint64_t S[8], W[80], t0, t1;
 
-  /* Copy state into S */
-  #pragma unroll
-  for (int i = 0; i < 8; i++) S[i] = md.state[i];
+  #define COPY_REVERSED_ENDIAN_U64(dst,src,j) \
+  ((uchar*)dst)[j*8+0] = ((uchar*)src)[j*8+7]; \
+  ((uchar*)dst)[j*8+1] = ((uchar*)src)[j*8+6]; \
+  ((uchar*)dst)[j*8+2] = ((uchar*)src)[j*8+5]; \
+  ((uchar*)dst)[j*8+3] = ((uchar*)src)[j*8+4]; \
+  ((uchar*)dst)[j*8+4] = ((uchar*)src)[j*8+3]; \
+  ((uchar*)dst)[j*8+5] = ((uchar*)src)[j*8+2]; \
+  ((uchar*)dst)[j*8+6] = ((uchar*)src)[j*8+1]; \
+  ((uchar*)dst)[j*8+7] = ((uchar*)src)[j*8+0];
 
-  /* Copy the state into 1024-bits into W[0..15] */
+  COPY_REVERSED_ENDIAN_U64(W,message,0)
+  COPY_REVERSED_ENDIAN_U64(W,message,1)
+  COPY_REVERSED_ENDIAN_U64(W,message,2)
+  COPY_REVERSED_ENDIAN_U64(W,message,3)
+
   #pragma unroll
-  for (int i = 0; i < 16; i++) LOAD64H(W[i], md.buf + (8*i));
+  for (int i = 4; i < 16; ++i) W[i] = 0;
+
+  ((uchar*)W)[39] = (uchar) 0x80;
+  ((uchar*)W)[121] = 1;
+
+  #define APPLY_FEEDBACK(S,OP) \
+  S[0] OP 0x6a09e667f3bcc908UL; \
+  S[1] OP 0xbb67ae8584caa73bUL; \
+  S[2] OP 0x3c6ef372fe94f82bUL; \
+  S[3] OP 0xa54ff53a5f1d36f1UL; \
+  S[4] OP 0x510e527fade682d1UL; \
+  S[5] OP 0x9b05688c2b3e6c1fUL; \
+  S[6] OP 0x1f83d9abfb41bd6bUL; \
+  S[7] OP 0x5be0cd19137e2179UL;
+
+  APPLY_FEEDBACK(S,=)
 
   /* Fill W[16..79] */
   #pragma unroll
   for (int i = 16; i < 80; i++) W[i] = Gamma1(W[i - 2]) + W[i - 7] + Gamma0(W[i - 15]) + W[i - 16];
 
   /* Compress */
-  #define RND(a,b,c,d,e,f,g,h,i) \
-  t0 = h + Sigma1(e) + Ch(e, f, g) + K[i] + W[i]; \
+  #define RND(a,b,c,d,e,f,g,h,i,k) \
+  t0 = h + Sigma1(e) + Ch(e, f, g) + k + W[i]; \
   t1 = Sigma0(a) + Maj(a, b, c);\
   d += t0; \
   h  = t0 + t1;
 
-  #pragma unroll
-  for (int i = 0; i < 80; i += 8) {
-      RND(S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],i+0);
-      RND(S[7],S[0],S[1],S[2],S[3],S[4],S[5],S[6],i+1);
-      RND(S[6],S[7],S[0],S[1],S[2],S[3],S[4],S[5],i+2);
-      RND(S[5],S[6],S[7],S[0],S[1],S[2],S[3],S[4],i+3);
-      RND(S[4],S[5],S[6],S[7],S[0],S[1],S[2],S[3],i+4);
-      RND(S[3],S[4],S[5],S[6],S[7],S[0],S[1],S[2],i+5);
-      RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],i+6);
-      RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],i+7);
-  }
+  #define RND_ITER(j,k0,k1,k2,k3,k4,k5,k6,k7) \
+  RND(S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],j*8+0,k0##UL); \
+  RND(S[7],S[0],S[1],S[2],S[3],S[4],S[5],S[6],j*8+1,k1##UL); \
+  RND(S[6],S[7],S[0],S[1],S[2],S[3],S[4],S[5],j*8+2,k2##UL); \
+  RND(S[5],S[6],S[7],S[0],S[1],S[2],S[3],S[4],j*8+3,k3##UL); \
+  RND(S[4],S[5],S[6],S[7],S[0],S[1],S[2],S[3],j*8+4,k4##UL); \
+  RND(S[3],S[4],S[5],S[6],S[7],S[0],S[1],S[2],j*8+5,k5##UL); \
+  RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],j*8+6,k6##UL); \
+  RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],j*8+7,k7##UL);
 
-  #undef RND
+  RND_ITER(0,0x428a2f98d728ae22,0x7137449123ef65cd,0xb5c0fbcfec4d3b2f,0xe9b5dba58189dbbc,0x3956c25bf348b538,0x59f111f1b605d019,0x923f82a4af194f9b,0xab1c5ed5da6d8118)
+  RND_ITER(1,0xd807aa98a3030242,0x12835b0145706fbe,0x243185be4ee4b28c,0x550c7dc3d5ffb4e2,0x72be5d74f27b896f,0x80deb1fe3b1696b1,0x9bdc06a725c71235,0xc19bf174cf692694)
+  RND_ITER(2,0xe49b69c19ef14ad2,0xefbe4786384f25e3,0x0fc19dc68b8cd5b5,0x240ca1cc77ac9c65,0x2de92c6f592b0275,0x4a7484aa6ea6e483,0x5cb0a9dcbd41fbd4,0x76f988da831153b5)
+  RND_ITER(3,0x983e5152ee66dfab,0xa831c66d2db43210,0xb00327c898fb213f,0xbf597fc7beef0ee4,0xc6e00bf33da88fc2,0xd5a79147930aa725,0x06ca6351e003826f,0x142929670a0e6e70)
+  RND_ITER(4,0x27b70a8546d22ffc,0x2e1b21385c26c926,0x4d2c6dfc5ac42aed,0x53380d139d95b3df,0x650a73548baf63de,0x766a0abb3c77b2a8,0x81c2c92e47edaee6,0x92722c851482353b)
+  RND_ITER(5,0xa2bfe8a14cf10364,0xa81a664bbc423001,0xc24b8b70d0f89791,0xc76c51a30654be30,0xd192e819d6ef5218,0xd69906245565a910,0xf40e35855771202a,0x106aa07032bbd1b8)
+  RND_ITER(6,0x19a4c116b8d2d0c8,0x1e376c085141ab53,0x2748774cdf8eeb99,0x34b0bcb5e19b48a8,0x391c0cb3c5c95a63,0x4ed8aa4ae3418acb,0x5b9cca4f7763e373,0x682e6ff3d6b2b8a3)
+  RND_ITER(7,0x748f82ee5defb2fc,0x78a5636f43172f60,0x84c87814a1f0ab72,0x8cc702081a6439ec,0x90befffa23631e28,0xa4506cebde82bde9,0xbef9a3f7b2c67915,0xc67178f2e372532b)
+  RND_ITER(8,0xca273eceea26619c,0xd186b8c721c0c207,0xeada7dd6cde0eb1e,0xf57d4f7fee6ed178,0x06f067aa72176fba,0x0a637dc5a2c898a6,0x113f9804bef90dae,0x1b710b35131c471b)
+  RND_ITER(9,0x28db77f523047d84,0x32caab7b40c72493,0x3c9ebe0a15c9bebc,0x431d67c49c100d4c,0x4cc5d4becb3e42b6,0x597f299cfc657e2a,0x5fcb6fab3ad6faec,0x6c44198c4a475817)
 
-  /* Feedback */
-  #pragma unroll
-  for (int i = 0; i < 8; i++) md.state[i] = md.state[i] + S[i];
+  APPLY_FEEDBACK(S,+=)
 
   // We can now output our finalized bytes into the output buffer.
-  #pragma unroll
-  for (int i = 0; i < 8; i++) STORE64H(md.state[i], out+(8*i));
-  return 0;
+  COPY_REVERSED_ENDIAN_U64(out,S,0)
+  COPY_REVERSED_ENDIAN_U64(out,S,1)
+  COPY_REVERSED_ENDIAN_U64(out,S,2)
+  COPY_REVERSED_ENDIAN_U64(out,S,3)
+  COPY_REVERSED_ENDIAN_U64(out,S,4)
+  COPY_REVERSED_ENDIAN_U64(out,S,5)
+  COPY_REVERSED_ENDIAN_U64(out,S,6)
+  COPY_REVERSED_ENDIAN_U64(out,S,7)
 }
 
+inline __attribute__((always_inline))
 void ed25519_create_keypair(unsigned char *public_key,
                             unsigned char *private_key,
                             const unsigned char *seed) {
@@ -3745,6 +3639,7 @@ void ed25519_create_keypair(unsigned char *public_key,
   ge_p3_tobytes(public_key, &A);
 }
 
+inline __attribute__((always_inline))
 static uchar * base58_encode(uchar *in, size_t *out_len, uchar *out) {
   unsigned int binary[8];
 

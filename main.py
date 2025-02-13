@@ -117,34 +117,25 @@ def get_selected_gpu_devices(platform_id, device_ids):
     return device_ptrs
 
 
-def _choose_platform():
-    platforms = cl.get_platforms()
-    print("Choose platform:")
-    for p_idx, _platform in enumerate(platforms):
-        print(f"{p_idx}. {_platform}")
-    return len(platforms)
-
-
-def _choose_devices(platform_id):
-    # not sorting, maybe has bug?
-    platforms = cl.get_platforms()
-    print("Choose device(s):")
-    all_devices = platforms[platform_id].get_devices()
-    for d_idx, device in enumerate(all_devices):
-        print(f"{d_idx}. {device}")
-
-
-def get_choosed_devices(pool):
+def get_choosed_devices():
     if "CHOOSED_OPENCL_DEVICES" in os.environ:
         (platform_id, device_ids) = os.environ.get("CHOOSED_OPENCL_DEVICES", "").split(
             ":"
         )
         return int(platform_id), list(map(int, device_ids.split(",")))
-    platforms_count = pool.apply(_choose_platform)
+    platforms = cl.get_platforms()
+    print("Choose platform:")
+    for p_idx, _platform in enumerate(platforms):
+        print(f"{p_idx}. {_platform}")
     platform_id = click.prompt(
-        "Choice ", default=0, type=click.IntRange(0, platforms_count)
+        "Choice ", default=0, type=click.IntRange(0, len(platforms))
     )
-    pool.apply(_choose_devices, (platform_id,))
+
+    print("Choose device(s):")
+    all_devices = platforms[platform_id].get_devices()
+    # not sorting, may have a bug?
+    for d_idx, device in enumerate(all_devices):
+        print(f"{d_idx}. {device}")
     try:
         device_ids = click.prompt(
             "Choice, comma-separated ",
@@ -383,12 +374,11 @@ def search_pubkey(
     check_character("ends_with", ends_with)
 
     choosed_devices = None
-    with Pool() as pool:
-        if select_device:
-            choosed_devices = get_choosed_devices(pool)
-            gpu_counts = len(choosed_devices[1])
-        else:
-            gpu_counts = len(pool.apply(get_all_gpu_devices))
+    if select_device:
+        choosed_devices = get_choosed_devices()
+        gpu_counts = len(choosed_devices[1])
+    else:
+        gpu_counts = len(get_all_gpu_devices())
 
     logging.info(
         f"Searching Solana pubkey that starts with '{starts_with}' and ends with '{ends_with} with case sensitivity {'on' if is_case_sensitive else 'off'}"
@@ -437,4 +427,6 @@ def show_device():
 
 
 if __name__ == "__main__":
+    # it's important
+    multiprocessing.set_start_method("spawn")
     cli()

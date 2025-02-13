@@ -1,4 +1,4 @@
-from src.lib import get_choosed_devices, check_character, get_kernel_source, save_result
+from src.lib import get_chosen_devices, check_character, get_kernel_source, save_result
 from src.searcher import get_all_gpu_devices, multi_gpu_init
 from src.host_setting import HostSetting
 
@@ -90,7 +90,7 @@ def search_pubkey(
 
     choosed_devices = None
     if select_device:
-        choosed_devices = get_choosed_devices()
+        choosed_devices = get_chosen_devices()
         gpu_counts = len(choosed_devices[1])
     else:
         gpu_counts = len(get_all_gpu_devices())

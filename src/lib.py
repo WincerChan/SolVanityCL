@@ -13,7 +13,7 @@ from pathlib import Path
 logging.basicConfig(level="INFO", format="[%(levelname)s %(asctime)s] %(message)s")
 
 
-def get_choosed_devices():
+def get_chosen_devices():
     if "CHOOSED_OPENCL_DEVICES" in os.environ:
         (platform_id, device_ids) = os.environ.get("CHOOSED_OPENCL_DEVICES", "").split(
             ":"

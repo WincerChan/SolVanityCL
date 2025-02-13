@@ -1,5 +1,6 @@
 import logging
 import time
+from typing import List, Optional, Tuple
 
 import numpy as np
 import pyopencl as cl
@@ -17,14 +18,15 @@ class Searcher:
         kernel_source: str,
         index: int,
         setting: HostSetting,
-        chosen_devices: tuple | None = None,
+        chosen_devices: Optional[Tuple[int, List[int]]] | None = None,
     ):
         if chosen_devices is None:
-            device_ids = get_all_gpu_devices()
+            devices = get_all_gpu_devices()
         else:
-            device_ids = get_selected_gpu_devices(*chosen_devices)
-        self.context = cl.Context([cl.Device.from_int_ptr(device_ids[index])])
-        self.gpu_chunks = len(device_ids)
+            devices = get_selected_gpu_devices(*chosen_devices)
+        enabled_device = devices[index]
+        self.context = cl.Context([enabled_device])
+        self.gpu_chunks = len(devices)
         self.command_queue = cl.CommandQueue(self.context)
         self.setting = setting
         self.index = index
@@ -32,9 +34,7 @@ class Searcher:
             index if chosen_devices is None else chosen_devices[1][index]
         )
         self.prev_time = None
-        self.is_nvidia = (
-            "NVIDIA" in cl.Device.from_int_ptr(device_ids[index]).platform.name.upper()
-        )
+        self.is_nvidia = "NVIDIA" in enabled_device.platform.name.upper()
 
         program = cl.Program(self.context, kernel_source).build()
         self.kernel = cl.Kernel(program, "generate_pubkey")
@@ -91,8 +91,8 @@ def multi_gpu_init(
     gpu_counts: int,
     stop_flag,
     lock,
-    chosen_devices: tuple | None = None,
-) -> list:
+    chosen_devices: Optional[Tuple[int, List[int]]] | None = None,
+) -> List:
     try:
         searcher = Searcher(
             kernel_source=setting.kernel_source,
@@ -122,7 +122,7 @@ def multi_gpu_init(
     return [0]
 
 
-def save_result(outputs: list, output_dir: str) -> int:
+def save_result(outputs: List, output_dir: str) -> int:
     from core.utils.crypto import save_keypair
 
     result_count = 0

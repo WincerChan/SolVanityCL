@@ -10,10 +10,9 @@ from core.config import DEFAULT_ITERATION_BITS, HostSetting
 from core.opencl.manager import (
     get_all_gpu_devices,
     get_chosen_devices,
-    get_kernel_source,
 )
 from core.searcher import multi_gpu_init, save_result
-from core.utils.helpers import check_character
+from core.utils.helpers import check_character, load_kernel_source
 
 logging.basicConfig(level="INFO", format="[%(levelname)s %(asctime)s] %(message)s")
 
@@ -90,7 +89,9 @@ def search_pubkey(
     result_count = 0
     with multiprocessing.Manager() as manager:
         with Pool(processes=gpu_counts) as pool:
-            kernel_source = get_kernel_source(starts_with, ends_with, is_case_sensitive)
+            kernel_source = load_kernel_source(
+                starts_with, ends_with, is_case_sensitive
+            )
             lock = manager.Lock()
             while result_count < count:
                 stop_flag = manager.Value("i", 0)
@@ -117,7 +118,7 @@ def show_device():
     platforms = cl.get_platforms()
     for p_index, platform in enumerate(platforms):
         click.echo(f"Platform {p_index}: {platform.name}")
-        devices = platform.get_devices()
+        devices = platform.get_devices(device_type=cl.device_type.GPU)
         for d_index, device in enumerate(devices):
             click.echo(f"  - Device {d_index}: {device.name}")
 

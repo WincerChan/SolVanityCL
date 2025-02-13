@@ -5,6 +5,9 @@ from pathlib import Path
 import click
 import pyopencl as cl
 
+os.environ["PYOPENCL_COMPILER_OUTPUT"] = "1"
+os.environ["PYOPENCL_NO_CACHE"] = "TRUE"
+
 
 def get_kernel_source(starts_with: str, ends_with: str, is_case_sensitive: bool) -> str:
     """

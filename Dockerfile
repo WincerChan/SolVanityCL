@@ -1,27 +1,32 @@
-FROM nvidia/opencl:latest
+FROM ubuntu:24.04
+LABEL maintainer "WincerChan <WincerChan@gmail.com>"
 
-# 更新包列表并安装 Python 3 和 pip
-RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ocl-icd-libopencl1 \
+        clinfo
 
-RUN apt-get install -y \
-    python3-pyopencl \
-    python3-nacl
+RUN mkdir -p /etc/OpenCL/vendors && \
+    echo "libnvidia-opencl.so.1" > /etc/OpenCL/vendors/nvidia.icd
 
-# 安装 Python 依赖
-RUN pip3 install base58 click
-# 环境变量
+# python dependences
+RUN apt-get install -y python3-click \
+    python3-base58 \
+    python3-nacl \
+    python3-numpy \
+    python3-pyopencl && \
+    rm -rf /var/lib/apt/lists/*
+
+
+# source codes
+COPY core /app/core
+COPY main.py /app
+COPY LICENSE /app
+
+# container-runtime
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
 
-# 将当前目录的内容拷贝到 Docker 容器中的 /app 目录
-COPY opencl /app/opencl
-COPY main.py /app
-
-# 设置工作目录
 WORKDIR /app
-
-
-# 使用 bash 作为入口点
 ENTRYPOINT ["/bin/bash"]

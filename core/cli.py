@@ -75,10 +75,10 @@ def search_pubkey(
     check_character("starts_with", starts_with)
     check_character("ends_with", ends_with)
 
-    choosed_devices = None
+    chosen_devices = None
     if select_device:
-        choosed_devices = get_chosen_devices()
-        gpu_counts = len(choosed_devices[1])
+        chosen_devices = get_chosen_devices()
+        gpu_counts = len(chosen_devices[1])
     else:
         gpu_counts = len(get_all_gpu_devices())
 
@@ -103,7 +103,7 @@ def search_pubkey(
                             gpu_counts,
                             stop_flag,
                             lock,
-                            choosed_devices,
+                            chosen_devices,
                         )
                         for x in range(gpu_counts)
                     ],

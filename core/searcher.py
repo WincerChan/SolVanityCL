@@ -17,19 +17,19 @@ class Searcher:
         kernel_source: str,
         index: int,
         setting: HostSetting,
-        choosed_devices: tuple | None = None,
+        chosen_devices: tuple | None = None,
     ):
-        if choosed_devices is None:
+        if chosen_devices is None:
             device_ids = get_all_gpu_devices()
         else:
-            device_ids = get_selected_gpu_devices(*choosed_devices)
+            device_ids = get_selected_gpu_devices(*chosen_devices)
         self.context = cl.Context([cl.Device.from_int_ptr(device_ids[index])])
         self.gpu_chunks = len(device_ids)
         self.command_queue = cl.CommandQueue(self.context)
         self.setting = setting
         self.index = index
         self.display_index = (
-            index if choosed_devices is None else choosed_devices[1][index]
+            index if chosen_devices is None else chosen_devices[1][index]
         )
         self.prev_time = None
         self.is_nvidia = (
@@ -73,7 +73,6 @@ class Searcher:
             (global_worker_size,),
             (self.setting.local_work_size,),
         )
-        # 在等待 GPU 计算时，更新 key
         self.setting.increase_key32()
         if self.prev_time is not None and self.is_nvidia:
             time.sleep(self.prev_time * 0.98)
@@ -92,14 +91,14 @@ def multi_gpu_init(
     gpu_counts: int,
     stop_flag,
     lock,
-    choosed_devices: tuple = None,
+    chosen_devices: tuple | None = None,
 ) -> list:
     try:
         searcher = Searcher(
             kernel_source=setting.kernel_source,
             index=index,
             setting=setting,
-            choosed_devices=choosed_devices,
+            chosen_devices=chosen_devices,
         )
         i = 0
         st = time.time()

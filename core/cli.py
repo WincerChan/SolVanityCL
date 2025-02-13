@@ -2,6 +2,7 @@ import logging
 import multiprocessing
 import sys
 from multiprocessing.pool import Pool
+from typing import List, Optional, Tuple
 
 import click
 import pyopencl as cl
@@ -74,7 +75,7 @@ def search_pubkey(
     check_character("starts_with", starts_with)
     check_character("ends_with", ends_with)
 
-    chosen_devices = None
+    chosen_devices: Optional[Tuple[int, List[int]]] = None
     if select_device:
         chosen_devices = get_chosen_devices()
         gpu_counts = len(chosen_devices[1])

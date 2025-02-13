@@ -1,7 +1,7 @@
 import logging
 import os
 import sys
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 import click
 import pyopencl as cl
@@ -26,7 +26,7 @@ def get_selected_gpu_devices(
     return [devices[d_id] for d_id in device_ids]
 
 
-def get_chosen_devices() -> Optional[Tuple[int, List[int]]]:
+def get_chosen_devices() -> Tuple[int, List[int]]:
     if "CHOSEN_OPENCL_DEVICES" in os.environ:
         platform_str, devices_str = os.environ.get("CHOSEN_OPENCL_DEVICES", "").split(
             ":"
@@ -39,11 +39,11 @@ def get_chosen_devices() -> Optional[Tuple[int, List[int]]]:
     platform_id = click.prompt(
         "Choice", default=0, type=click.IntRange(0, len(platforms) - 1)
     )
-    click.echo("Choose device(s):")
     all_devices = platforms[platform_id].get_devices(device_type=cl.device_type.GPU)
     if not all_devices:
         logging.error(f"Platform {platform_id} doesn't have GPU devices.")
         sys.exit(-1)
+    click.echo("Choose device(s):")
     for d_idx, device in enumerate(all_devices):
         click.echo(f"{d_idx}. {device.name}")
     device_ids_str = click.prompt("Choice, comma-separated", default="0", type=str)

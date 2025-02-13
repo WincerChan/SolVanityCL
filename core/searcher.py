@@ -18,7 +18,7 @@ class Searcher:
         kernel_source: str,
         index: int,
         setting: HostSetting,
-        chosen_devices: Optional[Tuple[int, List[int]]] | None = None,
+        chosen_devices: Optional[Tuple[int, List[int]]] = None,
     ):
         if chosen_devices is None:
             devices = get_all_gpu_devices()
@@ -91,7 +91,7 @@ def multi_gpu_init(
     gpu_counts: int,
     stop_flag,
     lock,
-    chosen_devices: Optional[Tuple[int, List[int]]] | None = None,
+    chosen_devices: Optional[Tuple[int, List[int]]] = None,
 ) -> List:
     try:
         searcher = Searcher(

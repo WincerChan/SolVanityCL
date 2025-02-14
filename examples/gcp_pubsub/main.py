@@ -48,12 +48,12 @@ error_topic = 'projects/{project_id}/topics/{topic}'.format(
 
 topic_name = 'projects/{project_id}/topics/{topic}'.format(
     project_id=PROJECT_ID,
-    topic='generate',  # Set this to something appropriate.
+    topic='generate',
 )
 
 subscription_name = 'projects/{project_id}/subscriptions/{sub}'.format(
     project_id=PROJECT_ID,
-    sub='generate-sub',  # Set this to something appropriate.
+    sub='generate-sub',
 )
 
 def get_result(outputs: List):

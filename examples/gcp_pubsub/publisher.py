@@ -23,12 +23,12 @@ topic_name = 'projects/{project_id}/topics/{topic}'.format(
 
 on_generated_subscription_name = 'projects/{project_id}/subscriptions/{sub}'.format(
     project_id=PROJECT_ID,
-    sub='on_generated-sub',  # Set this to something appropriate.
+    sub='on_generated-sub',
 )
 
 on_error_subscription_name = 'projects/{project_id}/subscriptions/{sub}'.format(
     project_id=PROJECT_ID,
-    sub='on_error-sub',  # Set this to something appropriate.
+    sub='on_error-sub',
 )
 
 payload = {

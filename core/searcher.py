@@ -74,10 +74,15 @@ class Searcher:
             (self.setting.local_work_size,),
         )
         self.setting.increase_key32()
+        
+        # Calculate prev_time BEFORE sleep - only includes GPU work time
+        self.prev_time = time.time() - start_time
+        
         if self.prev_time is not None and self.is_nvidia:
             time.sleep(self.prev_time * 0.98)
+        
         cl.enqueue_copy(self.command_queue, self.output, self.memobj_output).wait()
-        self.prev_time = time.time() - start_time
+        
         if log_stats:
             logging.info(
                 f"GPU {self.display_index} Speed: {global_worker_size / ((time.time() - start_time) * 1e6):.2f} MH/s"

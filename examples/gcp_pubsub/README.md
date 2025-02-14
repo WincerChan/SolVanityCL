@@ -34,7 +34,7 @@ pip install -r requirements.txt
 python3 main.py
 ```
 
-2. Publish a generate event by changing
+2. Publish a generate event
 ```
 python3 publisher.py
 ```

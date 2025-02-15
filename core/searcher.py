@@ -73,6 +73,7 @@ class Searcher:
             (global_worker_size,),
             (self.setting.local_work_size,),
         )
+        self.command_queue.flush()
         self.setting.increase_key32()
         if self.prev_time is not None and self.is_nvidia:
             time.sleep(self.prev_time * 0.98)

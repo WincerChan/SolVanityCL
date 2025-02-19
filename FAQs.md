@@ -6,6 +6,8 @@ This project has been tested and works correctly only on the **arm64 Darwin plat
 
 Support for NVIDIA Multi-GPU. Tested with 2 GPUs, 4 GPUs, and 8 GPUs. Due to a known issue (busy-wait) when running OpenCL in NVIDIA, each GPU will fully utilize one CPU core. Make sure you have enough CPU cores.
 
+> The busy-waiting problem has been fixed. The program will never fully utilize the CPU cores but still needs enough of them.
+
 ## Why does this project not work on my computer?
 
 1. Make sure your [platform is supported](#what-platforms-does-this-project-support).
@@ -27,4 +29,4 @@ If you require an 8-letter address, it may take days on an 8x4090 server.
 
 ## Can I request custom features or modifications?
 
-Yes, I offer customization services tailored to your specific needs. Feel free to contact me via [Telegram](https://t.me/Tivsae) for pricing details.
+Yes, I offer customization services tailored to your specific needs. Feel free to [contact me](https://confirmly.itswincer.com/contact) for pricing details.

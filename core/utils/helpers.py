@@ -17,12 +17,27 @@ def check_character(name: str, character: str) -> None:
 
 
 def load_kernel_source(
-    starts_with: str, ends_with: str, is_case_sensitive: bool
+    starts_with_list, ends_with: str, is_case_sensitive: bool
 ) -> str:
     """
     Update OpenCL codes with parameters
     """
-    PREFIX_BYTES = list(starts_with.encode())
+    prefixes = []
+    
+    if not starts_with_list:
+        prefixes.append([0])
+    else:
+        for prefix in starts_with_list:
+            prefix_bytes = list(prefix.encode())
+            prefixes.append(prefix_bytes)
+    
+    max_prefix_len = max(len(p) for p in prefixes)
+    max_prefix_len = max(1, max_prefix_len)
+    
+    for i in range(len(prefixes)):
+        while len(prefixes[i]) < max_prefix_len:
+            prefixes[i].append(0)
+    
     SUFFIX_BYTES = list(ends_with.encode())
 
     kernel_path = Path(__file__).parent.parent / "opencl" / "kernel.cl"
@@ -32,18 +47,20 @@ def load_kernel_source(
         source_lines = f.readlines()
 
     for i, line in enumerate(source_lines):
-        if line.startswith("constant uchar PREFIX[]"):
-            source_lines[i] = (
-                f"constant uchar PREFIX[] = {{{', '.join(map(str, PREFIX_BYTES))}}};\n"
-            )
-        if line.startswith("constant uchar SUFFIX[]"):
-            source_lines[i] = (
-                f"constant uchar SUFFIX[] = {{{', '.join(map(str, SUFFIX_BYTES))}}};\n"
-            )
-        if line.startswith("constant bool CASE_SENSITIVE"):
-            source_lines[i] = (
-                f"constant bool CASE_SENSITIVE = {str(is_case_sensitive).lower()};\n"
-            )
+        if line.startswith("#define N"):
+            source_lines[i] = f"#define N {len(prefixes)}\n"
+        elif line.startswith("#define L"):
+            source_lines[i] = f"#define L {max_prefix_len}\n"
+        elif line.startswith("constant uchar PREFIXES"):
+            prefixes_str = "{"
+            for prefix in prefixes:
+                prefixes_str += "{" + ", ".join(map(str, prefix)) + "}, "
+            prefixes_str = prefixes_str.rstrip(", ") + "}"
+            source_lines[i] = f"constant uchar PREFIXES[N][L] = {prefixes_str};\n"
+        elif line.startswith("constant uchar SUFFIX[]"):
+            source_lines[i] = f"constant uchar SUFFIX[] = {{{', '.join(map(str, SUFFIX_BYTES))}}};\n"
+        elif line.startswith("constant bool CASE_SENSITIVE"):
+            source_lines[i] = f"constant bool CASE_SENSITIVE = {str(is_case_sensitive).lower()};\n"
 
     source_str = "".join(source_lines)
     if "NVIDIA" in str(cl.get_platforms()) and platform.system() == "Windows":

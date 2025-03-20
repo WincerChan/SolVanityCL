@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pyopencl as cl
 from base58 import b58decode
-
+from typing import List
 
 def check_character(name: str, character: str) -> None:
     try:
@@ -17,7 +17,7 @@ def check_character(name: str, character: str) -> None:
 
 
 def load_kernel_source(
-    starts_with_list, ends_with: str, is_case_sensitive: bool
+    starts_with_list: List[str], ends_with: str, is_case_sensitive: bool
 ) -> str:
     """
     Update OpenCL codes with parameters

@@ -47,9 +47,9 @@ def load_kernel_source(
         source_lines = f.readlines()
 
     for i, line in enumerate(source_lines):
-        if line.startswith("#define N"):
+        if line.startswith("#define N 1"):
             source_lines[i] = f"#define N {len(prefixes)}\n"
-        elif line.startswith("#define L"):
+        elif line.startswith("#define L 3"):
             source_lines[i] = f"#define L {max_prefix_len}\n"
         elif line.startswith("constant uchar PREFIXES"):
             prefixes_str = "{"

@@ -3759,11 +3759,6 @@ __kernel void generate_pubkey(constant uchar *seed, global uchar *out,
   // prefix matching
   #pragma unroll
   for (size_t p = 0; p < N; p++) {
-    if (PREFIXES[p][0] == 0) {
-      any_mismatch = 0;
-      break;
-    }
-    
     unsigned int prefix_mismatch = 0;
     for (size_t i = 0; i < L && PREFIXES[p][i] != 0; i++) {
       prefix_mismatch |= ADJUST_INPUT_CASE(addr_raw[i]) ^ ADJUST_INPUT_CASE(alphabet_indices[PREFIXES[p][i]]);

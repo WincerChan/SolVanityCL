@@ -25,14 +25,13 @@ def load_kernel_source(
     prefixes = []
     
     if not starts_with_list:
-        prefixes.append([0])
+        prefixes.append([])
+        max_prefix_len = 0
     else:
         for prefix in starts_with_list:
-            prefix_bytes = list(prefix.encode())
-            prefixes.append(prefix_bytes)
-    
-    max_prefix_len = max(len(p) for p in prefixes)
-    max_prefix_len = max(1, max_prefix_len)
+                prefix_bytes = list(prefix.encode())
+                prefixes.append(prefix_bytes)
+        max_prefix_len = max(len(p) for p in prefixes)
     
     for i in range(len(prefixes)):
         while len(prefixes[i]) < max_prefix_len:

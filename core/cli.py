@@ -27,8 +27,9 @@ def cli():
 @click.option(
     "--starts-with",
     type=str,
-    default="",
-    help="Public key starts with the indicated prefix.",
+    default=[],
+    help="Public key starts with the indicated prefix. Provide multiple arguments to search for multiple prefixes.",
+    multiple=True,
 )
 @click.option(
     "--ends-with",
@@ -72,7 +73,9 @@ def search_pubkey(
         ctx = click.get_current_context()
         click.echo(ctx.get_help())
         sys.exit(1)
-    check_character("starts_with", starts_with)
+    
+    for prefix in starts_with:
+        check_character("starts_with", prefix)
     check_character("ends_with", ends_with)
 
     chosen_devices: Optional[Tuple[int, List[int]]] = None

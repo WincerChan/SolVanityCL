@@ -73,7 +73,7 @@ def search_pubkey(
         ctx = click.get_current_context()
         click.echo(ctx.get_help())
         sys.exit(1)
-    
+
     for prefix in starts_with:
         check_character("starts_with", prefix)
     check_character("ends_with", ends_with)
@@ -86,7 +86,10 @@ def search_pubkey(
         gpu_counts = len(get_all_gpu_devices())
 
     logging.info(
-        f"Searching Solana pubkey with starts_with='{starts_with}', ends_with='{ends_with}', case_sensitive={'on' if is_case_sensitive else 'off'}"
+        "Searching Solana pubkey with starts_with=(%s), ends_with=%s, is_case_sensitive=%s",
+        ", ".join(repr(s) for s in starts_with),
+        repr(ends_with),
+        is_case_sensitive,
     )
     logging.info(f"Using {gpu_counts} OpenCL device(s)")
 

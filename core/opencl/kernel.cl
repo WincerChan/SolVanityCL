@@ -6,8 +6,15 @@
 typedef int int32_t;
 typedef unsigned long uint64_t;
 typedef long int64_t;
-
 typedef int32_t fe[10];
+
+// DO NOT EDIT BELOW 5 LINES BY HAND -- CHANGES WILL BE OVERWRITTEN
+#define N 1
+#define L 3
+constant uchar PREFIXES[N][L] = {{83, 111, 76}};
+constant uchar SUFFIX[] = {};
+constant bool CASE_SENSITIVE = true;
+// DO NOT EDIT ABOVE THIS LINE -- END OF AUTO-GENERATED CODE
 
 #define ADJUST_INPUT_CASE(x) \
 (CASE_SENSITIVE ? (x) : \
@@ -34,11 +41,6 @@ constant uchar alphabet_indices[] = {
   55, 56, 57, 0, 0, 0, 0, 0
 };
 
-#define N 1
-#define L 3
-constant uchar PREFIXES[N][L] = {{83, 111, 76}};
-constant uchar SUFFIX[] = {};
-constant bool CASE_SENSITIVE = true;
 
 /*
 r = p + q
@@ -3737,7 +3739,7 @@ __kernel void generate_pubkey(constant uchar *seed, global uchar *out,
   uchar public_key[32] __attribute__((aligned(4)));
   uchar private_key[64];
   uchar key_base[32];
-    
+
   #pragma unroll
   for (size_t i = 0; i < 32; i++) {
     key_base[i] = seed[i];
@@ -3763,7 +3765,7 @@ __kernel void generate_pubkey(constant uchar *seed, global uchar *out,
     for (size_t i = 0; i < L && PREFIXES[p][i] != 0; i++) {
       prefix_mismatch |= ADJUST_INPUT_CASE(addr_raw[i]) ^ ADJUST_INPUT_CASE(alphabet_indices[PREFIXES[p][i]]);
     }
-    
+
     if (!prefix_mismatch) {
       any_mismatch = 0;
       break;

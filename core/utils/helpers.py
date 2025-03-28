@@ -1,7 +1,7 @@
 import logging
 import platform
 from pathlib import Path
-from typing import List
+from typing import Tuple
 
 import pyopencl as cl
 from base58 import b58decode
@@ -18,7 +18,7 @@ def check_character(name: str, character: str) -> None:
 
 
 def load_kernel_source(
-    starts_with_list: List[str], ends_with: str, is_case_sensitive: bool
+    starts_with_list: Tuple[str], ends_with: str, is_case_sensitive: bool
 ) -> str:
     """
     Update OpenCL codes with parameters

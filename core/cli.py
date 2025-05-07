@@ -96,7 +96,7 @@ def search_pubkey(
     result_count = 0
     with multiprocessing.Manager() as manager:
         with Pool(processes=gpu_counts) as pool:
-            kernel_source = load_kernel_source(
+            kernel_source, skip_len44 = load_kernel_source(
                 starts_with, ends_with, is_case_sensitive
             )
             lock = manager.Lock()
@@ -107,7 +107,7 @@ def search_pubkey(
                     [
                         (
                             x,
-                            HostSetting(kernel_source, iteration_bits),
+                            HostSetting(kernel_source, iteration_bits, skip_len44),
                             gpu_counts,
                             stop_flag,
                             lock,

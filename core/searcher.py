@@ -62,6 +62,7 @@ class Searcher:
         self.kernel.set_arg(1, self.memobj_output)
         self.kernel.set_arg(2, self.memobj_occupied_bytes)
         self.kernel.set_arg(3, self.memobj_group_offset)
+        self.kernel.set_arg(4, np.uint8(1 if setting.skip_len44 else 0).tobytes())
 
     def find(self, log_stats: bool = True) -> np.ndarray:
         start_time = time.time()

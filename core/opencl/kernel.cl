@@ -16,6 +16,23 @@ constant uchar SUFFIX[] = {};
 constant bool CASE_SENSITIVE = true;
 // DO NOT EDIT ABOVE THIS LINE -- END OF AUTO-GENERATED CODE
 
+constant uchar LEN44_MIN[32] = {
+    0x0e,0xdb,0xaf,0xda,0x67,0xca,0x37,0x18,
+    0x8c,0xf2,0x82,0x63,0x57,0x1f,0x03,0xb9,
+    0x71,0x68,0x79,0xe4,0xac,0xc9,0xc5,0x14,
+    0xab,0x67,0x28,0x00,0x00,0x00,0x00,0x00
+};
+
+inline bool ge_threshold(const uchar pk[32])
+{
+    #pragma unroll
+    for (int i = 0; i < 32; ++i) {
+        if (pk[i] >  LEN44_MIN[i]) return true;
+        if (pk[i] <  LEN44_MIN[i]) return false;
+    }
+    return true;   // equal
+}
+
 #define ADJUST_INPUT_CASE(x) \
 (CASE_SENSITIVE ? (x) : \
     ((x) - ((x) > 32) * \
@@ -3735,7 +3752,8 @@ static uchar * base58_encode(uchar *in, size_t *out_len, uchar *out) {
 
 __kernel void generate_pubkey(constant uchar *seed, global uchar *out,
                               global uchar *occupied_bytes,
-                              global uchar *group_offset) {
+                              global uchar *group_offset,
+                              uchar          skip_len44) {
   uchar public_key[32] __attribute__((aligned(4)));
   uchar private_key[64];
   uchar key_base[32];
@@ -3752,6 +3770,10 @@ __kernel void generate_pubkey(constant uchar *seed, global uchar *out,
   }
 
   ed25519_create_keypair(public_key, private_key, key_base);
+  if (skip_len44 && ge_threshold(public_key)) {
+    return;
+  }
+
   size_t length;
   uchar addr_buffer[45] __attribute__((aligned(4)));
   uchar *addr_raw = base58_encode(public_key, &length, addr_buffer);

@@ -8,7 +8,7 @@ DEFAULT_LOCAL_WORK_SIZE = 32
 
 
 class HostSetting:
-    def __init__(self, kernel_source: str, iteration_bits: int):
+    def __init__(self, kernel_source: str, iteration_bits: int, skip_len44: bool):
         self.iteration_bits = iteration_bits
         # iteration_bytes 为需要被迭代覆盖的字节数（向上取整）
         self.iteration_bytes = np.ubyte(ceil(iteration_bits / 8))
@@ -16,6 +16,8 @@ class HostSetting:
         self.local_work_size = DEFAULT_LOCAL_WORK_SIZE
         self.kernel_source = kernel_source
         self.key32 = self.generate_key32()
+        print(f"{skip_len44=}")
+        self.skip_len44 = skip_len44
 
     def generate_key32(self) -> np.ndarray:
         token_bytes = secrets.token_bytes(

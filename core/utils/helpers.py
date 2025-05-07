@@ -17,9 +17,26 @@ def check_character(name: str, character: str) -> None:
         raise e
 
 
+def need_skip_len44(prefixes, ignore_case=False):
+    """
+    当且仅当：所有前缀补足 44 位后解码 **都不是 32 字节** 时，
+    返回 True → 可以跳过 44 字符搜索区
+    """
+    any_32byte_ok = False          # 只要有一个满足 32 字节就要保留 44 区
+
+    for p in prefixes:
+        # 2. 补足到 44 字符再解码
+        s = p.upper() if ignore_case else p
+        probe = s + "1" * (44 - len(s))
+        decoded = b58decode(probe)
+
+        if len(decoded) == 32:     # 至少一个前缀在 44 字符可行
+            any_32byte_ok = True
+
+    return not any_32byte_ok        # 全部都不是 32 ⇒ True（可剪枝）
 def load_kernel_source(
     starts_with_list: Tuple[str], ends_with: str, is_case_sensitive: bool
-) -> str:
+) -> Tuple[str, bool]:
     """
     Update OpenCL codes with parameters
     """
@@ -67,4 +84,4 @@ def load_kernel_source(
         source_str = source_str.replace("#define __generic\n", "")
     if cl.get_cl_header_version()[0] != 1 and platform.system() != "Windows":
         source_str = source_str.replace("#define __generic\n", "")
-    return source_str
+    return source_str, need_skip_len44(starts_with_list, not is_case_sensitive)

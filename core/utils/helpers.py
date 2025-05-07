@@ -19,21 +19,24 @@ def check_character(name: str, character: str) -> None:
 
 def need_skip_len44(prefixes, ignore_case=False):
     """
-    当且仅当：所有前缀补足 44 位后解码 **都不是 32 字节** 时，
-    返回 True → 可以跳过 44 字符搜索区
+    返回值：
+        True  —— 所有前缀在 44 字符长度内都不可能出现，可安全跳过 44 区
+        False —— 至少有一个前缀在 44 字符长度内可行，必须保留 44 区
+    完全对齐 solana-keygen grind 的 Rust 逻辑
     """
-    any_32byte_ok = False          # 只要有一个满足 32 字节就要保留 44 区
+    if not prefixes:
+        return False
 
     for p in prefixes:
-        # 2. 补足到 44 字符再解码
         s = p.upper() if ignore_case else p
-        probe = s + "1" * (44 - len(s))
+        probe = s + "1" * (44 - len(s))  # 与 Rust 的 '1' 填充一致
         decoded = b58decode(probe)
 
-        if len(decoded) == 32:     # 至少一个前缀在 44 字符可行
-            any_32byte_ok = True
+        if len(decoded) == 32:           # 至少一个前缀能落在 44 字符区
+            return False                 # → 不可剪枝
 
-    return not any_32byte_ok        # 全部都不是 32 ⇒ True（可剪枝）
+    return True                          # → 可剪枝
+
 def load_kernel_source(
     starts_with_list: Tuple[str], ends_with: str, is_case_sensitive: bool
 ) -> Tuple[str, bool]:

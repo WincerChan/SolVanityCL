@@ -15,17 +15,13 @@ Support for NVIDIA Multi-GPU. Tested with 2 GPUs, 4 GPUs, and 8 GPUs. Due to a k
 
 ## How long does this program generally take to generate a matched address?
 
-In Ethereum, private keys are simple 256-bit numbers, and sequential increments result in predictable public key changes.
+- **Ethereum** keys are simple 256-bit integers, so incrementing the private key leads to sequential, predictable public keys.  
+- **Solana** uses a 512-bit seed passed through SHA-512 (with only the first half used), so even consecutive private keys yield non-sequential, hard-to-predict public keys.  
 
-Solana’s process is more complex: its 512-bit private key is derived from a seed using SHA-512, with only the first half used for key generation. Due to this hashing step, even if Solana’s private keys are incremented consecutively, the public keys remain non-sequential and appear more unpredictable than Ethereum’s.
+Estimating prefix/suffix search time depends heavily on which Base58 characters you’re targeting. If you treat every character as equally likely — which is only a rough approximation — you’d need about $58^6 \div (616\times10^6)\approx61.7\text{ seconds} $
+on an 8×4090-GPU server to find a 6-character match. In practice, we’ve measured closer to **20 minutes** for 6-character prefixes or suffixes.
 
-Solana addresses with 6/7/8-letter prefixes or suffixes are difficult to mathematically estimate in terms of generation time, and their difficulty varies.
-
-Theoretically, a program would need to perform 58 ** 6 computations to generate any 6-letter prefix/suffix address if the generation process is truly random. A server equipped with 8×4090 GPUs has a hashing speed of 616 MH/s, so the estimated time to generate such an address is (58 ** 6) / (616 × 1E6) ~= 61.7 seconds.
-
-However, based on my testing, generating a 6-letter address actually takes around 20 minutes on an 8×4090 server.
-
-If you require an 8-letter address, it may take days on an 8x4090 server.
+However, **not all characters are equally likely** in a Solana address. Some letters (like ‘1’) appear much less often, and others (like those in the ‘2–H’ range) much more. For the full breakdown of per-character probabilities and how they affect search time, see our [Final Decision](https://blog.itswincer.com/posts/solana-vanity-prefix-vs-suffix-probability-en/#final-decision) analysis.  
 
 ## Can I request custom features or modifications?
 

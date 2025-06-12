@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Tuple
 
 import pyopencl as cl
+import requests
 from base58 import b58decode
 
 
@@ -68,3 +69,16 @@ def load_kernel_source(
     if cl.get_cl_header_version()[0] != 1 and platform.system() != "Windows":
         source_str = source_str.replace("#define __generic\n", "")
     return source_str
+
+
+def send_telegram_message(bot_token: str, chat_id: str, message: str) -> None:
+    """
+    Send a message to a Telegram chat.
+    """
+    try:
+        requests.post(
+            f"https://api.telegram.org/bot{bot_token}/sendMessage",
+            data={"chat_id": chat_id, "text": message, "parse_mode": "MarkdownV2"},
+        )
+    except Exception:
+        pass

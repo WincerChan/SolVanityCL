@@ -1,6 +1,6 @@
 import logging
 import multiprocessing
-import platform
+import platform as plf
 import sys
 from multiprocessing.pool import Pool
 from typing import List, Optional, Tuple
@@ -99,8 +99,6 @@ def search_pubkey(
         check_character("starts_with", prefix)
     check_character("ends_with", ends_with)
 
-    host_name = platform.node()
-
     chosen_devices: Optional[Tuple[int, List[int]]] = None
     if select_device:
         chosen_devices = get_chosen_devices()
@@ -116,6 +114,18 @@ def search_pubkey(
         notify,
     )
     logging.info(f"Using {gpu_counts} OpenCL device(s)")
+
+    host_name = plf.node()
+    if notify:
+        send_telegram_message(
+            telegram_bot_token,
+            telegram_chat_id,
+            "Starting to search: starts with \\({}\\), ends with {} at __{}__".format(
+                ", ".join(repr(s) for s in starts_with),
+                repr(ends_with),
+                host_name,
+            ),
+        )
 
     result_count = 0
     with multiprocessing.Manager() as manager:

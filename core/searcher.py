@@ -6,10 +6,7 @@ import numpy as np
 import pyopencl as cl
 
 from core.config import HostSetting
-from core.opencl.manager import (
-    get_all_gpu_devices,
-    get_selected_gpu_devices,
-)
+from core.opencl.manager import get_all_gpu_devices, get_selected_gpu_devices
 
 
 class Searcher:
@@ -123,14 +120,14 @@ def multi_gpu_init(
     return [0]
 
 
-def save_result(outputs: List, output_dir: str) -> int:
-    from core.utils.crypto import save_keypair
+def parse_result(results: List) -> List[bytes]:
+    keypairs: List[bytes] = []
 
-    result_count = 0
-    for output in outputs:
-        if not output[0]:
+    for result in results:
+        if not result[0]:
             continue
-        result_count += 1
-        pv_bytes = bytes(output[1:])
-        save_keypair(pv_bytes, output_dir)
-    return result_count
+
+        pv_bytes = bytes(result[1:])
+        keypairs.append(pv_bytes)
+
+    return keypairs

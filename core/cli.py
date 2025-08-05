@@ -14,6 +14,7 @@ from core.searcher import multi_gpu_init, parse_result
 from core.utils.crypto import save_keypair
 from core.utils.helpers import (
     check_character,
+    escape_md_v2,
     load_kernel_source,
     send_telegram_message,
 )
@@ -115,7 +116,7 @@ def search_pubkey(
     )
     logging.info(f"Using {gpu_counts} OpenCL device(s)")
 
-    host_name = plf.node()
+    host_name = escape_md_v2(plf.node())
     if notify:
         send_telegram_message(
             telegram_bot_token,

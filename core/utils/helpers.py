@@ -1,5 +1,6 @@
 import logging
 import platform
+import re
 from pathlib import Path
 from typing import Tuple
 
@@ -71,14 +72,19 @@ def load_kernel_source(
     return source_str
 
 
+def escape_md_v2(text: str) -> str:
+    return re.sub(r'([_*[\]()~`>#+\-=|{}.!])', r'\\\1', text)
+
 def send_telegram_message(bot_token: str, chat_id: str, message: str) -> None:
     """
     Send a message to a Telegram chat.
     """
     try:
-        requests.post(
+        r = requests.post(
             f"https://api.telegram.org/bot{bot_token}/sendMessage",
             data={"chat_id": chat_id, "text": message, "parse_mode": "MarkdownV2"},
         )
-    except Exception:
+        # logging.info(r.text)
+    except Exception as e:
+        logging.exception(e)
         pass

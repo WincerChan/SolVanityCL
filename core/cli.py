@@ -1,5 +1,6 @@
 import logging
 import multiprocessing
+import platform as plf
 import sys
 from multiprocessing.pool import Pool
 from typing import List, Optional, Tuple
@@ -8,12 +9,14 @@ import click
 import pyopencl as cl
 
 from core.config import DEFAULT_ITERATION_BITS, HostSetting
-from core.opencl.manager import (
-    get_all_gpu_devices,
-    get_chosen_devices,
+from core.opencl.manager import get_all_gpu_devices, get_chosen_devices
+from core.searcher import multi_gpu_init, parse_result
+from core.utils.crypto import save_keypair
+from core.utils.helpers import (
+    check_character,
+    load_kernel_source,
+    send_telegram_message,
 )
-from core.searcher import multi_gpu_init, save_result
-from core.utils.helpers import check_character, load_kernel_source
 
 logging.basicConfig(level="INFO", format="[%(levelname)s %(asctime)s] %(message)s")
 
@@ -58,6 +61,13 @@ def cli():
 @click.option(
     "--is-case-sensitive", type=bool, default=True, help="Case sensitive search flag."
 )
+@click.option(
+    "--notify/--no-notify",
+    default=False,
+    help="Notify flag when found pubkey.",
+)
+@click.option("--telegram-bot-token", type=str, help="Telegram bot token.")
+@click.option("--telegram-chat-id", type=str, help="Telegram chat ID.")
 def search_pubkey(
     starts_with,
     ends_with,
@@ -66,10 +76,21 @@ def search_pubkey(
     select_device,
     iteration_bits,
     is_case_sensitive,
+    notify,
+    telegram_bot_token,
+    telegram_chat_id,
 ):
     """Search for Solana vanity pubkeys."""
     if not starts_with and not ends_with:
-        click.echo("Please provide at least one of --starts-with or --ends-with.")
+        logging.error("Please provide at least one of --starts-with or --ends-with.\n")
+        ctx = click.get_current_context()
+        click.echo(ctx.get_help())
+        sys.exit(1)
+
+    if notify and (not telegram_bot_token or not telegram_chat_id):
+        logging.error(
+            "Please provide both telegram bot token and chat id when using --notify.\n"
+        )
         ctx = click.get_current_context()
         click.echo(ctx.get_help())
         sys.exit(1)
@@ -86,12 +107,25 @@ def search_pubkey(
         gpu_counts = len(get_all_gpu_devices())
 
     logging.info(
-        "Searching Solana pubkey with starts_with=(%s), ends_with=%s, is_case_sensitive=%s",
+        "Searching Solana pubkey with starts_with=(%s), ends_with=%s, is_case_sensitive=%s, notify=%s",
         ", ".join(repr(s) for s in starts_with),
         repr(ends_with),
         is_case_sensitive,
+        notify,
     )
     logging.info(f"Using {gpu_counts} OpenCL device(s)")
+
+    host_name = plf.node()
+    if notify:
+        send_telegram_message(
+            telegram_bot_token,
+            telegram_chat_id,
+            "Starting to search: starts with \\({}\\), ends with {} at __{}__".format(
+                ", ".join(repr(s) for s in starts_with),
+                repr(ends_with),
+                host_name,
+            ),
+        )
 
     result_count = 0
     with multiprocessing.Manager() as manager:
@@ -116,7 +150,18 @@ def search_pubkey(
                         for x in range(gpu_counts)
                     ],
                 )
-                result_count += save_result(results, output_dir)
+                keypairs = parse_result(results)
+                result_count += len(keypairs)
+
+                for keypair in keypairs:
+                    pubkey = save_keypair(keypair, output_dir)
+
+                    if notify:
+                        send_telegram_message(
+                            telegram_bot_token,
+                            telegram_chat_id,
+                            f"Found pubkey: `{pubkey}` at __{host_name}__",
+                        )
 
 
 @cli.command(context_settings={"show_default": True})

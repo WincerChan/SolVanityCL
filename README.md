@@ -62,6 +62,9 @@ Options:
                                   iteration.  [default: 24]
   --is-case-sensitive BOOLEAN     Whether the search should be case sensitive
                                   or not. [default: True]
+  --notify BOOLEAN                Notify flag when found pubkey.
+  --telegram-bot-token TEXT       Telegram bot token.
+  --telegram-chat-id TEXT         Telegram chat ID.
   --help                          Show this message and exit.
 ```
 
@@ -72,11 +75,9 @@ $ python3 main.py search-pubkey --starts-with SoL # run
 $ solana-keygen pubkey SoLxxxxxxxxxxx.json # you should install solana cli to verify it
 ```
 
-
 ## FAQs
 
 See [FAQs.md](./FAQs.md).
-
 
 ## Donations
 

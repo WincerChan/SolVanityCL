@@ -66,12 +66,14 @@ class Searcher:
     def find(self, log_stats: bool = True) -> np.ndarray:
         start_time = time.time()
         cl.enqueue_copy(self.command_queue, self.memobj_key32, self.setting.key32)
-        global_worker_size = self.setting.global_work_size // self.gpu_chunks
+        global_work_size = self.setting.global_work_size // self.gpu_chunks
+        local_size = self.setting.local_work_size
+        global_size = ((global_work_size + local_size - 1) // local_size) * local_size # align global size and local size
         cl.enqueue_nd_range_kernel(
             self.command_queue,
             self.kernel,
-            (global_worker_size,),
-            (self.setting.local_work_size,),
+            (global_size,),
+            (local_size,),
         )
         self.command_queue.flush()
         self.setting.increase_key32()
@@ -81,7 +83,7 @@ class Searcher:
         self.prev_time = time.time() - start_time
         if log_stats:
             logging.info(
-                f"GPU {self.display_index} Speed: {global_worker_size / ((time.time() - start_time) * 1e6):.2f} MH/s"
+                f"GPU {self.display_index} Speed: {global_work_size / ((time.time() - start_time) * 1e6):.2f} MH/s"
             )
         return self.output
 
